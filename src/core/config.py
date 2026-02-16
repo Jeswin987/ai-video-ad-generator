@@ -25,7 +25,7 @@ class Config:
     # ============================================================================
     # PROJECT PATHS
     # ============================================================================
-    BASE_DIR = Path(__file__).parent
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
     MODELS_DIR = BASE_DIR / "models"
     ASSETS_DIR = BASE_DIR / "assets"
     OUTPUT_DIR = BASE_DIR / "output"
