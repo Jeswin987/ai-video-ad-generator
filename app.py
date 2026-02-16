@@ -11,8 +11,8 @@ import logging
 from datetime import datetime
 
 # Import pipeline + config
-from src.video_generation_pipeline import VideoGenerationPipeline
-from src.config import Config
+from src.core.video_generation_pipeline import VideoGenerationPipeline
+from src.core.config import Config
 
 # Initialize Flask app
 app = Flask(__name__,

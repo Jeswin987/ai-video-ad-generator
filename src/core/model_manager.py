@@ -9,7 +9,7 @@ import time
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from typing import Optional
-from src.config import Config
+from src.core.config import Config
 
 logger = logging.getLogger(__name__)
 

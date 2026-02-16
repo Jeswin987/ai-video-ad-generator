@@ -11,8 +11,8 @@ import re
 from typing import Dict, Any, List, Optional
 import torch
 
-from src.config import Config
-from src.model_manager import ModelManager
+from src.core.config import Config
+from src.core.model_manager import ModelManager
 
 logger = logging.getLogger(__name__)
 

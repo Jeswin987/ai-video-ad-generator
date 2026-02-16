@@ -12,7 +12,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from typing import Optional, Tuple, Union
 
-from src.config import Config
+from src.core.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -401,7 +401,7 @@ class VideoGeneratorWithImages:
         easing_name = preset.get('easing', Config.KEN_BURNS_EASING)
 
         # Import and apply easing function
-        from src.easing_functions import get_easing_function
+        from src.media.easing_functions import get_easing_function
         easing_func = get_easing_function(easing_name)
         eased_progress = easing_func(progress)
 

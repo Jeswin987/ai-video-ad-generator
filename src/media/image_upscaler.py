@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional, Literal
 from PIL import Image
 
-from src.config import Config
+from src.core.config import Config
 
 logger = logging.getLogger(__name__)
 

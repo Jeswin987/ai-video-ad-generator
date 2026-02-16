@@ -17,3 +17,26 @@ SDXL Turbo (512x512) for fast diffusion-based image synthesis
 Peak VRAM usage: ~3.5–4GB
 
 Average generation time: ~10 minutes per 15–40s video
+
+
+System Architecture:
+
+User Prompt
+   ↓
+Flask REST API
+   ↓
+VideoGenerationPipeline (Core Orchestrator)
+   ↓
+Storyline & Scene Structuring (Gemma 2B IT – FP16)
+   ↓
+Scene Normalization (5 Structured Scenes)
+   ↓
+Image Generation per Scene (SDXL Turbo @ 512x512)
+   ↓
+Voiceover Synthesis & Duration Alignment
+   ↓
+Scene-Level Video Composition (Motion + Overlay)
+   ↓
+Media Stitching (FFmpeg)
+   ↓
+Final Rendered Marketing Video (MP4)

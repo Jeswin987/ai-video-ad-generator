@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 
 from gtts import gTTS
-from src.config import Config
+from src.core.config import Config
 
 logger = logging.getLogger(__name__)
 

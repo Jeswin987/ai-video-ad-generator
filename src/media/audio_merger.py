@@ -7,7 +7,7 @@ import logging
 import subprocess
 from pathlib import Path
 from typing import List
-from src.config import Config
+from src.core.config import Config
 
 logger = logging.getLogger(__name__)
 

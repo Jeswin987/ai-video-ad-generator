@@ -11,16 +11,16 @@ from typing import Dict, Any, List, Optional
 import torch
 import time
 
-from src.config import Config
-from src.storyline_generator import StorylineGenerator
-from src.scene_descriptor import SceneDescriptor
-from src.image_generator import ImageGenerator
-from src.voiceover_generator import VoiceoverGenerator
-from src.video_generator_with_images import VideoGeneratorWithImages
-from src.audio_merger import AudioMerger
-from src.media_merger import MediaMerger
-from src.scene_normalizer import normalize_scenes
-from src.image_upscaler import ImageUpscaler
+from src.core.config import Config
+from src.generation.storyline_generator import StorylineGenerator
+from src.generation.scene_descriptor import SceneDescriptor
+from src.media.image_generator import ImageGenerator
+from src.media.voiceover_generator import VoiceoverGenerator
+from src.media.video_generator_with_images import VideoGeneratorWithImages
+from src.media.audio_merger import AudioMerger
+from src.media.media_merger import MediaMerger
+from src.generation.scene_normalizer import normalize_scenes
+from src.media.image_upscaler import ImageUpscaler
 
 logger = logging.getLogger(__name__)
 
@@ -407,7 +407,7 @@ class VideoGenerationPipeline:
         """Unload text generation models to free VRAM"""
         try:
             # Access the shared model manager
-            from src.model_manager import ModelManager
+            from src.core.model_manager import ModelManager
             manager = ModelManager()
 
             # Clear model

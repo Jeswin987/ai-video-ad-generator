@@ -14,7 +14,7 @@ from typing import Optional, List, Dict, Tuple
 from PIL import Image
 from diffusers import AutoPipelineForText2Image
 
-from src.config import Config
+from src.core.config import Config
 
 logger = logging.getLogger(__name__)
 
