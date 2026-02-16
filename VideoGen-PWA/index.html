@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <title>AI Video Generator</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-title">
+                    <span class="icon">🎬</span>
+                    <h1>AI Video Generator</h1>
+                </div>
+                <div class="connection-status">
+                    <span id="status-indicator" class="status-dot status-connecting"></span>
+                    <span id="status-text">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Server Settings -->
+        <section class="settings-card">
+            <div class="settings-header">
+                <span class="icon">⚙️</span>
+                <h2>Server Settings</h2>
+            </div>
+            <div class="settings-content">
+                <label for="server-url" class="form-label">Server URL</label>
+                <input 
+                    type="text" 
+                    id="server-url" 
+                    class="form-input" 
+                    placeholder="http://192.168.1.10:5000"
+                    value="http://10.10.48.96:5000"
+                >
+                <p class="helper-text">Enter your laptop's local IP address</p>
+                <button id="save-settings-btn" class="btn btn-secondary">
+                    Save Settings
+                </button>
+            </div>
+        </section>
+
+        <!-- Video Generation Form -->
+        <section class="generation-card">
+            <h2>Create Your Video</h2>
+            
+            <!-- IMPORTANT: No form tag, just divs to prevent page reload -->
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="product-description" class="form-label">
+                        Product Description
+                    </label>
+                    <textarea 
+                        id="product-description" 
+                        class="form-textarea" 
+                        rows="4"
+                        placeholder="Describe your product (e.g., A UV-C self-cleaning water bottle that kills bacteria)"
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="theme-select" class="form-label">
+                        Visual Theme
+                    </label>
+                    <select id="theme-select" class="form-select">
+                        <option value="Modern Cool">Modern Cool</option>
+                        <option value="Warm Professional">Warm Professional</option>
+                        <option value="Bold Energetic">Bold Energetic</option>
+                        <option value="Elegant Minimal">Elegant Minimal</option>
+                    </select>
+                </div>
+
+                <button id="generate-btn" class="btn btn-primary btn-large">
+                    <span class="btn-text">Generate Video</span>
+                    <span class="btn-icon">🚀</span>
+                </button>
+            </div>
+
+            <!-- Progress Section -->
+            <div id="progress-section" class="progress-section hidden">
+                <h3>Generating Your Video...</h3>
+                
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                
+                <div id="progress-percentage" class="progress-percentage">0%</div>
+                
+                <div id="progress-stage" class="progress-stage">Initializing...</div>
+                
+                <div class="progress-steps">
+                    <div id="step-storyline" class="progress-step">
+                        <span class="step-icon">📝</span>
+                        <span class="step-text">Storyline</span>
+                    </div>
+                    <div id="step-images" class="progress-step">
+                        <span class="step-icon">🎨</span>
+                        <span class="step-text">Images</span>
+                    </div>
+                    <div id="step-audio" class="progress-step">
+                        <span class="step-icon">🎤</span>
+                        <span class="step-text">Audio</span>
+                    </div>
+                    <div id="step-video" class="progress-step">
+                        <span class="step-icon">🎬</span>
+                        <span class="step-text">Video</span>
+                    </div>
+                </div>
+
+                <button id="cancel-btn" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+
+            <!-- Result Section -->
+            <div id="result-section" class="result-section hidden">
+                <h3>✨ Your Video is Ready!</h3>
+                
+                <video id="result-video" class="result-video" controls>
+                    Your browser doesn't support video playback.
+                </video>
+                
+                <div class="result-actions">
+                    <button id="download-btn" class="btn btn-primary">
+                        📥 Download Video
+                    </button>
+                    <button id="share-btn" class="btn btn-secondary">
+                        📤 Share
+                    </button>
+                    <button id="new-video-btn" class="btn btn-secondary">
+                        ➕ Create New
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Section -->
+            <div id="error-section" class="error-section hidden">
+                <div class="error-icon">⚠️</div>
+                <h3>Generation Failed</h3>
+                <p id="error-message" class="error-message"></p>
+                <button id="retry-btn" class="btn btn-primary">
+                    Try Again
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Load app.js -->
+    <script src="app.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('✅ Service Worker registered'))
+                    .catch(err => console.log('❌ Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

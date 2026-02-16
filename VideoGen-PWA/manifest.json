@@ -1,0 +1,33 @@
+{
+  "name": "AI Video Generator",
+  "short_name": "VideoGen",
+  "description": "Generate AI-powered marketing videos on your local network",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "screenshots": [
+    {
+      "src": "screenshots/home.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "label": "Home Screen"
+    }
+]
+}

@@ -1,0 +1,403 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #333;
+    min-height: 100vh;
+    padding: 10px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+/* Header */
+.header {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    font-size: 24px;
+    color: #333;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 20px;
+    background: #f0f0f0;
+    font-size: 12px;
+}
+
+.status-indicator.connected {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-indicator.disconnected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-indicator .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ccc;
+}
+
+.status-indicator.connected .dot {
+    background: #28a745;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Cards */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 20px;
+}
+
+.card.error-card {
+    border-left: 4px solid #dc3545;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #888;
+    font-size: 12px;
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:active {
+    opacity: 0.9;
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.btn-secondary:active {
+    background: #e0e0e0;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Progress */
+.progress-container {
+    margin-bottom: 20px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.status-message {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+/* Stage Indicators */
+.stage-indicators {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.stage {
+    flex: 1;
+    text-align: center;
+    opacity: 0.3;
+    transition: all 0.3s ease;
+}
+
+.stage.active {
+    opacity: 1;
+}
+
+.stage.completed {
+    opacity: 1;
+}
+
+.stage-icon {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.stage-name {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Video Player */
+.video-container {
+    width: 100%;
+    background: #000;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+video {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.action-buttons .btn {
+    margin-bottom: 0;
+}
+
+/* Settings Panel */
+.settings-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.settings-panel h3 {
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 16px;
+}
+
+/* History */
+.history-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.history-section h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 6px;
+    background: #f8f9fa;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.history-item:active {
+    background: #e9ecef;
+    transform: scale(0.98);
+}
+
+.history-icon {
+    font-size: 24px;
+    margin-right: 12px;
+}
+
+.history-details {
+    flex: 1;
+}
+
+.history-prompt {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.history-time {
+    font-size: 12px;
+    color: #999;
+}
+
+.empty-state {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    font-size: 14px;
+}
+
+/* Error Card */
+#errorMessage {
+    color: #dc3545;
+    margin-bottom: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .header h1 {
+        font-size: 20px;
+    }
+    
+    .stage-indicators {
+        gap: 5px;
+    }
+    
+    .stage-name {
+        font-size: 10px;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    body {
+        color: #e0e0e0;
+    }
+    
+    .card {
+        background: #1e1e1e;
+        color: #e0e0e0;
+    }
+    
+    .card h2 {
+        color: #e0e0e0;
+    }
+    
+    .form-group label {
+        color: #e0e0e0;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        background: #2a2a2a;
+        color: #e0e0e0;
+        border-color: #444;
+    }
+}
