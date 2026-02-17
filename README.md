@@ -10,7 +10,7 @@ RTX 2050 (4GB VRAM) compatible
 
 5-scene structured storytelling for a 30-second ad
 
-Gemma 2 2B IT (FP16) for scene and script generation
+Gemma 2 2B IT (4-bit quantized via BitsAndBytes, FP16 compute) for scene and script generation
 
 SDXL Turbo (512x512) for fast diffusion-based image synthesis
 
@@ -21,22 +21,31 @@ Average generation time: ~10 minutes per 15–40s video
 
 System Architecture:
 
-User Prompt
-   ↓
-Flask REST API
-   ↓
-VideoGenerationPipeline (Core Orchestrator)
-   ↓
-Storyline & Scene Structuring (Gemma 2B IT – FP16)
-   ↓
-Scene Normalization (5 Structured Scenes)
-   ↓
-Image Generation per Scene (SDXL Turbo @ 512x512)
-   ↓
-Voiceover Synthesis & Duration Alignment
-   ↓
-Scene-Level Video Composition (Motion + Overlay)
-   ↓
-Media Stitching (FFmpeg)
-   ↓
-Final Rendered Marketing Video (MP4)
+User Prompt 
+→ Flask REST API 
+→ VideoGenerationPipeline (Core Orchestrator) 
+→ Storyline & Scene Structuring (Gemma 2B IT – 4-bit quantized via BitsAndBytes, FP16 compute) 
+→ Scene Normalization (5 Structured Scenes) 
+→ Image Generation per Scene (SDXL Turbo @ 512x512) 
+→ Voiceover Synthesis & Duration Alignment 
+→ Scene-Level Video Composition (Motion + Overlay) 
+→ Media Stitching (FFmpeg) 
+→ Final Rendered Marketing Video (MP4)
+
+Key Characteristics:
+
+Fully local inference (no external APIs)
+
+RTX 2050 (4GB VRAM) compatible
+
+Default runtime configuration: 3 scenes (4GB optimized mode)
+
+Architecture supports 5-scene marketing structure
+
+Gemma 2B IT (4-bit quantized via BitsAndBytes, FP16 compute)
+
+SDXL Turbo (512x512 diffusion inference)
+
+Peak VRAM usage: ~3.5–4GB
+
+Average generation time: ~10 minutes per 15–40s video

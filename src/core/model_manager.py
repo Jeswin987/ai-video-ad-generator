@@ -60,7 +60,8 @@ class ModelManager:
                 if not Config.HF_MODEL_PATH.exists():
                     raise FileNotFoundError(
                         f"Model directory not found: {Config.HF_MODEL_PATH}\n"
-                        f"Please run: python download_gemma_2b.py"
+                        f"⚠ Model not found. Please manually download from Hugging Face and place inside the models/ directory."
+
                     )
 
                 # Configure quantization
@@ -115,7 +116,7 @@ class ModelManager:
 
             except FileNotFoundError as e:
                 logger.error(f"❌ {str(e)}")
-                logger.error("💡 Solution: Run 'python download_gemma_2b.py'")
+                logger.error("💡Model not found. Please manually download from Hugging Face and place inside the models/ directory.")
                 raise
 
             except RuntimeError as e:

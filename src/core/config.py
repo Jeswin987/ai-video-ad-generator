@@ -168,7 +168,7 @@ class Config:
                     return cache_path
 
         logger.warning(f"⚠ Model not found, using configured path: {cls.HF_MODEL_PATH}")
-        logger.warning(f"⚠ Please run: python download_model.py")
+        logger.warning("⚠ Model not found. Please manually download from Hugging Face and place inside the models/ directory.")
         return cls.HF_MODEL_PATH
 
     @classmethod
@@ -221,7 +221,7 @@ class Config:
                 logger.info(f"✅ Image generation enabled: {cls.IMAGE_MODEL_PATH}")
             else:
                 logger.warning(f"⚠ SDXL-Turbo not found at: {cls.IMAGE_MODEL_PATH}")
-                logger.warning(f"⚠ Run: python download_sdxl_turbo.py")
+                logger.warning("⚠ SDXL-Turbo not found. Please download it from Hugging Face and place inside the models/ directory.")
                 logger.warning(f"⚠ Falling back to colored backgrounds")
                 cls.USE_IMAGE_GENERATION = False
 
