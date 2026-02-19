@@ -55,6 +55,8 @@ class VideoGenerationPipeline:
             visual_theme: str = "professional blue",
             output_dir: Optional[Path] = None
     ) -> Optional[Path]:
+        start_total = time.time()
+
         """
         Generate complete video with AI images
 
@@ -88,6 +90,8 @@ class VideoGenerationPipeline:
             # ================================================================
             # STAGE 1: Generate storyline
             # ================================================================
+            start_llm = time.time()
+
             logger.info("\n📖 STAGE 1: Generating storyline...")
             storyline = self.storyline_gen.generate(prompt)
             if not storyline:
@@ -122,11 +126,17 @@ class VideoGenerationPipeline:
                 assert isinstance(scene["text_overlay"], str), f"Scene {idx} text_overlay not string"
             logger.info("✅ All scenes validated")
 
+            llm_time = time.time() - start_llm
+            logger.info(f"[Timing] LLM + Scene Structuring: {llm_time:.2f} seconds")
+
+
             # ================================================================
             # STAGE 3: Generate AI Images
             # ================================================================
             scene_images = {}
             if Config.USE_IMAGE_GENERATION:
+                start_images = time.time()
+
                 logger.info("\n🎨 STAGE 3: Generating AI images...")
                 logger.info("⚠️ Unloading text model to free VRAM...")
 
@@ -157,6 +167,9 @@ class VideoGenerationPipeline:
                 torch.cuda.empty_cache()
 
                 logger.info(f"✅ Generated {len(scene_images)} AI images")
+                image_time = time.time() - start_images
+                logger.info(f"[Timing] Image Generation: {image_time:.2f} seconds")
+
             else:
                 logger.info("\n🎨 STAGE 3: Skipping image generation (using theme colors)")
 
@@ -185,6 +198,8 @@ class VideoGenerationPipeline:
             # ================================================================
             # STAGE 4: Generate voiceovers WITH DURATION SYNC
             # ================================================================
+            start_voice = time.time()
+
             logger.info("\n🎤 STAGE 4: Generating voiceovers with duration sync...")
             audio_dir = output_dir / "audio"
             audio_dir.mkdir(parents=True, exist_ok=True)
@@ -261,12 +276,18 @@ class VideoGenerationPipeline:
             self._log_duration_summary(scenes, total_duration)
 
             logger.info(f"✅ Generated {len(audio_files)} voiceovers with synced durations")
+            voice_time = time.time() - start_voice
+            logger.info(f"[Timing] Voiceover Generation: {voice_time:.2f} seconds")
+
 
             # ================================================================
             # STAGE 5: Merge continuous audio
             # ================================================================
+            start_audio_merge = time.time()
+
             logger.info("\n🎵 STAGE 5: Merging continuous audio track...")
             merged_audio_path = output_dir / "merged_audio.mp3"
+
             try:
                 merged_audio = self.audio_merger.merge_scene_audio(
                     audio_files=audio_files,
@@ -279,9 +300,16 @@ class VideoGenerationPipeline:
                 logger.info("📌 Will use individual scene audio as fallback")
                 merged_audio = None
 
+            audio_merge_time = time.time() - start_audio_merge
+            logger.info(f"[Timing] Audio Merge: {audio_merge_time:.2f} seconds")
+
+
+
             # ================================================================
             # STAGE 6: Generate videos
             # ================================================================
+            start_video_gen = time.time()
+
             logger.info("\n🎥 STAGE 6: Creating videos...")
             videos_dir = output_dir / "videos"
             videos_dir.mkdir(parents=True, exist_ok=True)
@@ -313,9 +341,15 @@ class VideoGenerationPipeline:
 
             logger.info(f"✅ Generated {len(video_files)} scene videos")
 
+            video_gen_time = time.time() - start_video_gen
+            logger.info(f"[Timing] Scene Video Generation: {video_gen_time:.2f} seconds")
+
+
             # ================================================================
             # STAGE 7: Merge final video
             # ================================================================
+            start_final_merge = time.time()
+
             logger.info("\n🎬 STAGE 7: Assembling final video...")
 
             if merged_audio:
@@ -358,6 +392,9 @@ class VideoGenerationPipeline:
                     )
                 else:
                     final_video = merged_videos[0] if merged_videos else None
+            final_merge_time = time.time() - start_final_merge
+            logger.info(f"[Timing] Final Assembly: {final_merge_time:.2f} seconds")
+
 
             # ================================================================
             # FINAL SUMMARY
@@ -372,6 +409,9 @@ class VideoGenerationPipeline:
             logger.info(f"🎵 Continuous Audio: {'Yes' if merged_audio else 'No'}")
             logger.info(f"⏱️ Total Duration: {total_duration:.2f}s ({total_duration / 60:.1f} min)")
             logger.info("=" * 70)
+            total_time = time.time() - start_total
+            logger.info(f"[Timing] TOTAL PIPELINE TIME: {total_time/60:.2f} minutes")
+
 
             return final_video
 
