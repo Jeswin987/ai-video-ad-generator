@@ -145,15 +145,22 @@ venv\Scripts\activate
 Install dependencies:
 
 pip install -r requirements.txt
-Model Setup
 
-Models must be downloaded once and placed inside the models/ directory.
 
-Expected structure:
+## Model Setup
+
+Download models from Hugging Face and place them in:
 
 models/
  ├── gemma-2-2b-it/
  └── sdxl-turbo/
+
+Example:
+
+models/gemma-2-2b-it/config.json
+models/sdxl-turbo/model_index.json
+
+
 
 The system loads models strictly from local storage.
 
@@ -375,6 +382,6 @@ Multi-style video templates
 
 GPU batch optimization
 
-License
+License:
 
 This project is for educational and research purposes.
