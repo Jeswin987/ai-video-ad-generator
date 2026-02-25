@@ -1,12 +1,12 @@
-# AI Video Marketing Ad Generator
+# 🎬 AI Video Marketing Ad Generator
 
-This project is a fully local, resource-aware AI pipeline that transforms a single text prompt into a complete marketing video — including script, visuals, voiceover, motion effects, and final rendering.
+> A fully local, resource-aware AI pipeline that transforms a single text prompt into a complete marketing video — including script, visuals, voiceover, motion effects, and final rendering.
 
-It is specifically engineered to run on **low-VRAM hardware (4GB GPU)** using quantization and staged model loading.
+Specifically engineered to run on **low-VRAM hardware (4GB GPU)** using quantization and staged model loading.
 
 ---
 
-## What This Project Demonstrates
+## 🧠 What This Project Demonstrates
 
 This is a **memory-constrained AI systems engineering project** focused on:
 
@@ -19,43 +19,42 @@ This is a **memory-constrained AI systems engineering project** focused on:
 
 ---
 
-## System Architecture (Runtime Flow)
+## 🏗️ System Architecture (Runtime Flow)
 
+```
 User Prompt
-→ Flask REST API
-→ VideoGenerationPipeline (Core Orchestrator)
-→ Storyline & Scene Structuring (Gemma 2 2B IT – 4-bit quantized)
-→ Scene Normalization
-→ Text Model Unload (VRAM release)
-→ Image Generation per Scene (SDXL Turbo 512x512)
-→ Diffusion Model Unload
-→ Voiceover Generation + Duration Sync
-→ Scene Video Composition (Ken Burns motion)
-→ Media Stitching (FFmpeg)
-→ Final Rendered Video (MP4)
-
-
----
-
-## Default Runtime Configuration (4GB Optimized Mode)
-
-| Component | Value |
-|---------|------|
-Scenes | 3
-Resolution | 512x512
-Diffusion Steps | 6
-Upscaling | Disabled
-Video FPS | 24
-
-The conceptual architecture supports a **5-scene marketing structure**, but runtime uses **3 scenes** to ensure VRAM stability on 4GB GPUs.
+  → Flask REST API
+  → VideoGenerationPipeline (Core Orchestrator)
+  → Storyline & Scene Structuring (Gemma 2 2B IT – 4-bit quantized)
+  → Scene Normalization
+  → Text Model Unload (VRAM release)
+  → Image Generation per Scene (SDXL Turbo 512x512)
+  → Diffusion Model Unload
+  → Voiceover Generation + Duration Sync
+  → Scene Video Composition (Ken Burns motion)
+  → Media Stitching (FFmpeg)
+  → Final Rendered Video (MP4)
+```
 
 ---
 
-## Models Used
+## ⚙️ Default Runtime Configuration (4GB Optimized Mode)
 
-### Text Model
+| Component        | Value    |
+|------------------|----------|
+| Scenes           | 3        |
+| Resolution       | 512x512  |
+| Diffusion Steps  | 6        |
+| Upscaling        | Disabled |
+| Video FPS        | 24       |
 
-**Gemma 2 2B IT**
+> The conceptual architecture supports a **5-scene marketing structure**, but runtime uses **3 scenes** to ensure VRAM stability on 4GB GPUs.
+
+---
+
+## 🤖 Models Used
+
+### Text Model — Gemma 2 2B IT
 
 - Fully local loading
 - `load_in_4bit=True` using BitsAndBytes
@@ -63,9 +62,7 @@ The conceptual architecture supports a **5-scene marketing structure**, but runt
 - Full-precision weights stored on disk
 - Quantized dynamically at load time
 
-### Image Model
-
-**SDXL Turbo**
+### Image Model — SDXL Turbo
 
 - 512x512 inference
 - Sequential CPU offload
@@ -74,150 +71,118 @@ The conceptual architecture supports a **5-scene marketing structure**, but runt
 
 ---
 
-## Model Storage
+## 💾 Model Storage
 
 Models are downloaded once from Hugging Face and stored locally:
 
+```
 models/
 ├── gemma-2-2b-it/
 └── sdxl-turbo/
+```
 
+Runtime loading uses `local_files_only=True`, which guarantees:
 
-Runtime loading uses:
-
-
-local_files_only=True
-
-
-This guarantees:
-
-- No runtime downloads
-- Fully offline operation
-- Faster startup
+- ✅ No runtime downloads
+- ✅ Fully offline operation
+- ✅ Faster startup
 
 ---
 
-## Hardware Compatibility
+## 🖥️ Hardware Compatibility
 
 Tested on:
 
-- GPU: NVIDIA RTX 2050
-- VRAM: 4GB
-- RAM: 8GB
+| Component | Spec          |
+|-----------|---------------|
+| GPU       | NVIDIA RTX 2050 |
+| VRAM      | 4GB           |
+| RAM       | 8GB           |
 
-Peak VRAM usage:
-
-
-~2.0–2.2GB active allocation
-Stable under 4GB limit
-
+**Peak VRAM usage:** `~2.0–2.2GB` active allocation — stable under the 4GB limit.
 
 ---
 
-## Performance Benchmarks (RTX 2050)
+## 📊 Performance Benchmarks (RTX 2050)
 
 Example run (3 scenes, ~23s video):
 
-| Stage | Time |
-|------|------|
-LLM + Scene Structuring | ~98 seconds
-Image Generation | ~308 seconds
-Voiceover + Audio Merge | ~5 seconds
-Scene Video Rendering | ~29 seconds
-Final Assembly | ~1.4 seconds
+| Stage                    | Time          |
+|--------------------------|---------------|
+| LLM + Scene Structuring  | ~98 seconds   |
+| Image Generation         | ~308 seconds  |
+| Voiceover + Audio Merge  | ~5 seconds    |
+| Scene Video Rendering    | ~29 seconds   |
+| Final Assembly           | ~1.4 seconds  |
+| **Total Pipeline Time**  | **~7 minutes** |
 
-Total Pipeline Time:
-
-
-~7 minutes
-
-
-Performance scales approximately linearly with scene count.
+> Performance scales approximately linearly with scene count.
 
 ---
 
-## Output
+## 📦 Output
 
 Each generation produces:
 
 - AI-generated scene images
-- Voiceovers
-- Scene videos
-- Final MP4
+- Voiceover audio files
+- Per-scene video clips
+- Final MP4 with audio
 - Scene metadata JSON
 - Runtime logs
 
-Example output structure:
-
-
+```
 output/
-
-images/
-scene_1_image.png
-scene_2_image.png
-scene_3_image.png
-
-audio/
-audio_scene_1.mp3
-audio_scene_2.mp3
-audio_scene_3.mp3
-
-final_video_with_audio.mp4
-
+├── images/
+│   ├── scene_1_image.png
+│   ├── scene_2_image.png
+│   └── scene_3_image.png
+├── audio/
+│   ├── audio_scene_1.mp3
+│   ├── audio_scene_2.mp3
+│   └── audio_scene_3.mp3
+└── final_video_with_audio.mp4
+```
 
 ---
 
-## Installation
+## 🚀 Installation
 
-Clone repository:
+**1. Clone the repository**
 
-
+```bash
 git clone https://github.com/Jeswin987/ai-video-ad-generator.git
-
 cd ai-video-ad-generator
+```
 
+**2. Create a virtual environment**
 
-Create virtual environment:
-
-
+```bash
 python -m venv venv
 venv\Scripts\activate
+```
 
+**3. Install dependencies**
 
-Install dependencies:
-
-
+```bash
 pip install -r requirements.txt
-
+```
 
 ---
 
-## Model Setup
+## 📥 Model Setup
 
-Download models from Hugging Face and place them into:
+Download models from Hugging Face and place them into the `models/` directory:
 
-
+```
 models/
 ├── gemma-2-2b-it/
+│   └── config.json
 └── sdxl-turbo/
+    └── model_index.json
+```
 
-
-Example files:
-
-
-models/gemma-2-2b-it/config.json
-models/sdxl-turbo/model_index.json
-
-
-The system loads models strictly from local storage.
-
-Runtime loading uses:
-
-
-local_files_only=True
-
-
-This ensures:
+The system loads models strictly from local storage using `local_files_only=True`, ensuring:
 
 - No runtime downloads
 - Offline operation
@@ -225,104 +190,86 @@ This ensures:
 
 ---
 
-## Running the Server
+## ▶️ Running the Server
 
-Start API server:
-
-
+```bash
 python app.py
+```
 
+Server runs at: `http://localhost:5000`
 
-Server runs at:
+Expected startup logs:
 
-
-http://localhost:5000
-
-
-Expected logs:
-
-
+```
 AI VIDEO GENERATION API SERVER
 Device: cuda
 Image Generation: Enabled
 Pipeline ready
-
+```
 
 ---
 
-## Web Interface
+## 🌐 Web Interface
 
-Open:
-
-
-http://localhost:5000
-
+Open `http://localhost:5000` in your browser.
 
 Features:
-
 - Prompt input
-- Video generation
+- Video generation trigger
 - Progress monitoring
 - Video download
 
 ---
 
-## Example Prompt
+## 💡 Example Prompt
 
-
-Create a marketing video for an AI-powered productivity app designed for students. Highlight distraction problems and show how the AI assistant improves focus.
-
+```
+Create a marketing video for an AI-powered productivity app designed for students.
+Highlight distraction problems and show how the AI assistant improves focus.
+```
 
 Typical output:
-
 - 3 scenes
 - 20–30 seconds video
-- AI visuals
+- AI-generated visuals
 - Voiceover narration
-- Animated motion
+- Ken Burns animated motion
 - Final MP4 render
 
 ---
 
-## Project Structure
+## 🗂️ Project Structure
 
-
+```
 ai-video-ad-generator/
-
-app.py
-requirements.txt
-
-src/
-core/
-config.py
-model_manager.py
-video_generation_pipeline.py
-
-generation/
-storyline_generator.py
-scene_descriptor.py
-scene_normalizer.py
-
-media/
-image_generator.py
-voiceover_generator.py
-audio_merger.py
-video_generator_with_images.py
-media_merger.py
-
-models/
-output/
-logs/
-temp/
-
+├── app.py
+├── requirements.txt
+├── src/
+│   ├── core/
+│   │   ├── config.py
+│   │   ├── model_manager.py
+│   │   └── video_generation_pipeline.py
+│   ├── generation/
+│   │   ├── storyline_generator.py
+│   │   ├── scene_descriptor.py
+│   │   └── scene_normalizer.py
+│   └── media/
+│       ├── image_generator.py
+│       ├── voiceover_generator.py
+│       ├── audio_merger.py
+│       ├── video_generator_with_images.py
+│       └── media_merger.py
+├── models/
+├── output/
+├── logs/
+└── temp/
+```
 
 ---
 
-## Logging and Instrumentation
+## 📋 Logging and Instrumentation
 
-The pipeline includes detailed runtime instrumentation.
-
-Each run records:
+The pipeline includes detailed runtime instrumentation. Each run records:
 
 - Scene generation time
 - Diffusion time
@@ -331,83 +278,64 @@ Each run records:
 - Final assembly time
 - Total runtime
 
-Example:
+Example log output:
 
+```
+[Timing] LLM + Scene Structuring:  98 seconds
+[Timing] Image Generation:        308 seconds
+[Timing] Scene Video Generation:   28 seconds
+[Timing] Final Assembly:            1.4 seconds
+```
 
-[Timing] LLM + Scene Structuring: 98 seconds
-[Timing] Image Generation: 308 seconds
-[Timing] Scene Video Generation: 28 seconds
-[Timing] Final Assembly: 1.4 seconds
-
-
-Logs stored in:
-
-
-logs/
-
+Logs are stored in the `logs/` directory.
 
 ---
 
-## Engineering Challenges Solved
+## 🔧 Engineering Challenges Solved
 
 ### VRAM Constraints
 
-Problem:
+**Problem:** Running LLM and diffusion models together exceeds 4GB VRAM.
 
-Running LLM and diffusion models together exceeds 4GB VRAM.
-
-Solution:
-
+**Solution:**
 - 4-bit LLM quantization
 - Sequential model unloading
 - CPU offloading
 - FP16 compute
 
----
-
 ### Memory Stability
 
-Problem:
+**Problem:** Diffusion models crash on low-VRAM GPUs.
 
-Diffusion models crash on low VRAM GPUs.
-
-Solution:
-
-- CPU offload
-- Reduced resolution
-- Reduced steps
-- Controlled pipeline execution
-
----
+**Solution:**
+- CPU offload pipeline
+- Reduced resolution (512x512)
+- Reduced diffusion steps (6)
+- Controlled pipeline execution order
 
 ### Runtime Optimization
 
-Problem:
+**Problem:** Full pipelines can take 20+ minutes.
 
-Full pipelines can take 20+ minutes.
-
-Solution:
-
-- SDXL Turbo
+**Solution:**
+- SDXL Turbo for fast inference
 - Low-step diffusion
-- Scene count optimization
-- Efficient FFmpeg usage
+- Optimized scene count
+- Efficient FFmpeg media assembly
 
 ---
 
-## Future Improvements
+## 🔮 Future Improvements
 
-Possible extensions:
-
-- Higher resolution generation
-- 5-scene runtime mode
-- Better voice models
-- Faster diffusion schedulers
-- GPU batching
-- Style templates
+- [ ] Higher resolution generation
+- [ ] 5-scene runtime mode
+- [ ] Better voice synthesis models
+- [ ] Faster diffusion schedulers
+- [ ] GPU batching support
+- [ ] Style templates
 
 ---
 
-## License
+## 📄 License
 
-Educational and research purposes.
+For educational and research purposes.
