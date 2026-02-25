@@ -22,18 +22,7 @@ End-to-end automation from prompt → final MP4
 
 System Architecture (Runtime Flow)
 
-User Prompt
-→ Flask REST API
-→ VideoGenerationPipeline (Core Orchestrator)
-→ Storyline & Scene Structuring (Gemma 2 2B IT – 4-bit quantized, FP16 compute)
-→ Scene Normalization (Structured Scene Schema)
-→ Text Model Unload (VRAM release)
-→ Image Generation per Scene (SDXL Turbo @ 512x512 with CPU offload)
-→ Diffusion Model Unload
-→ Voiceover Generation (gTTS) + Duration Sync
-→ Scene-Level Video Composition (Ken Burns motion @ 24fps)
-→ Media Stitching (FFmpeg)
-→ Final Rendered Marketing Video (MP4)
+User Prompt → Flask REST API → VideoGenerationPipeline (Core Orchestrator) → Storyline & Scene Structuring (Gemma 2 2B IT – 4-bit quantized, FP16 compute) → Scene Normalization (Structured Scene Schema) → Text Model Unload (VRAM release) → Image Generation per Scene (SDXL Turbo @ 512x512 with CPU offload) → Diffusion Model Unload → Voiceover Generation (gTTS) + Duration Sync → Scene-Level Video Composition (Ken Burns motion @ 24fps) → Media Stitching (FFmpeg) → Final Rendered Marketing Video (MP4)
 
 Default Runtime Configuration (4GB Optimized Mode)
 
@@ -51,8 +40,7 @@ Motion: Ken Burns effect (audio-aware easing)
 
 The original conceptual architecture supports a 5-scene marketing structure, but the default configuration uses 3 scenes to maintain VRAM stability and reduce runtime on 4GB GPUs.
 
-Models Used
-Text Model
+Models Used Text Model
 
 Gemma 2 2B IT
 
@@ -78,8 +66,7 @@ Attention slicing enabled
 
 VAE optimizations enabled
 
-All models are downloaded once from Hugging Face and stored locally inside the models/ directory.
-Runtime loading uses local_files_only=True to ensure no network calls occur during generation.
+All models are downloaded once from Hugging Face and stored locally inside the models/ directory. Runtime loading uses local_files_only=True to ensure no network calls occur during generation.
 
 Hardware Compatibility
 
@@ -91,9 +78,7 @@ VRAM: 4GB
 
 System RAM: 8GB
 
-Peak VRAM usage during generation:
-~2.0–2.2GB active allocation
-Stable under 4GB limit
+Peak VRAM usage during generation: ~2.0–2.2GB active allocation Stable under 4GB limit
 
 Performance Benchmarks (RTX 2050 – 4GB Mode)
 
@@ -109,8 +94,7 @@ Scene Video Rendering: ~29 seconds
 
 Final Assembly: ~1.4 seconds
 
-Total Pipeline Time:
-~7.3 minutes
+Total Pipeline Time: ~7.3 minutes
 
 Performance scales roughly linearly with scene count due to diffusion inference cost.
 
@@ -134,33 +118,24 @@ Installation
 
 Clone the repository:
 
-git clone https://github.com/Jeswin987/ai-video-ad-generator.git
-cd ai-video-ad-generator
+git clone https://github.com/Jeswin987/ai-video-ad-generator.git cd ai-video-ad-generator
 
 Create a virtual environment (recommended):
 
-python -m venv venv
-venv\Scripts\activate
+python -m venv venv venv\Scripts\activate
 
 Install dependencies:
 
 pip install -r requirements.txt
 
-
-## Model Setup
-
+Model Setup
 Download models from Hugging Face and place them in:
 
-models/
- ├── gemma-2-2b-it/
- └── sdxl-turbo/
+models/ ├── gemma-2-2b-it/ └── sdxl-turbo/
 
 Example:
 
-models/gemma-2-2b-it/config.json
-models/sdxl-turbo/model_index.json
-
-
+models/gemma-2-2b-it/config.json models/sdxl-turbo/model_index.json
 
 The system loads models strictly from local storage.
 
@@ -188,11 +163,7 @@ http://localhost:5000
 
 You should see logs similar to:
 
-AI VIDEO GENERATION API SERVER
-Device: cuda
-Image Generation: Enabled
-Pipeline ready
-Web Interface
+AI VIDEO GENERATION API SERVER Device: cuda Image Generation: Enabled Pipeline ready Web Interface
 
 Open the browser:
 
@@ -228,38 +199,7 @@ Animated motion
 
 Final MP4 render
 
-Project Structure
-ai-video-ad-generator/
-│
-├── app.py
-├── requirements.txt
-│
-├── src/
-│   ├── core/
-│   │   ├── config.py
-│   │   ├── model_manager.py
-│   │   └── video_generation_pipeline.py
-│   │
-│   ├── generation/
-│   │   ├── storyline_generator.py
-│   │   ├── scene_descriptor.py
-│   │   └── scene_normalizer.py
-│   │
-│   └── media/
-│       ├── image_generator.py
-│       ├── voiceover_generator.py
-│       ├── audio_merger.py
-│       ├── video_generator_with_images.py
-│       └── media_merger.py
-│
-├── models/
-│   ├── gemma-2-2b-it/
-│   └── sdxl-turbo/
-│
-├── output/
-├── logs/
-└── temp/
-Logging and Instrumentation
+Project Structure ai-video-ad-generator/ │ ├── app.py ├── requirements.txt │ ├── src/ │ ├── core/ │ │ ├── config.py │ │ ├── model_manager.py │ │ └── video_generation_pipeline.py │ │ │ ├── generation/ │ │ ├── storyline_generator.py │ │ ├── scene_descriptor.py │ │ └── scene_normalizer.py │ │ │ └── media/ │ ├── image_generator.py │ ├── voiceover_generator.py │ ├── audio_merger.py │ ├── video_generator_with_images.py │ └── media_merger.py │ ├── models/ │ ├── gemma-2-2b-it/ │ └── sdxl-turbo/ │ ├── output/ ├── logs/ └── temp/ Logging and Instrumentation
 
 The system includes detailed runtime logging for performance analysis.
 
@@ -281,16 +221,11 @@ Total pipeline runtime
 
 Example log output:
 
-[Timing] LLM + Scene Structuring: 98 seconds
-[Timing] Image Generation: 308 seconds
-[Timing] Scene Video Generation: 28 seconds
-[Timing] Final Assembly: 1.4 seconds
-[Timing] TOTAL PIPELINE TIME: 7.3 minutes
+[Timing] LLM + Scene Structuring: 98 seconds [Timing] Image Generation: 308 seconds [Timing] Scene Video Generation: 28 seconds [Timing] Final Assembly: 1.4 seconds [Timing] TOTAL PIPELINE TIME: 7.3 minutes
 
 Logs are stored in:
 
-logs/
-Engineering Challenges Solved
+logs/ Engineering Challenges Solved
 
 This project addresses several real engineering constraints:
 
@@ -348,25 +283,11 @@ Output Files
 
 Each generation produces:
 
-output/
- ├── images/
- │    ├── scene_1_image.png
- │    ├── scene_2_image.png
- │    └── scene_3_image.png
- │
- ├── audio/
- │    ├── audio_scene_1.mp3
- │    ├── audio_scene_2.mp3
- │    └── audio_scene_3.mp3
- │
- └── final_video_with_audio.mp4
+output/ ├── images/ │ ├── scene_1_image.png │ ├── scene_2_image.png │ └── scene_3_image.png │ ├── audio/ │ ├── audio_scene_1.mp3 │ ├── audio_scene_2.mp3 │ └── audio_scene_3.mp3 │ └── final_video_with_audio.mp4
 
 Additional metadata:
 
-scene_1_prompt.json
-scene_2_prompt.json
-scene_3_prompt.json
-Future Improvements
+scene_1_prompt.json scene_2_prompt.json scene_3_prompt.json Future Improvements
 
 Possible extensions:
 
