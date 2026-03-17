@@ -1,4 +1,4 @@
-# 🎬 AI Video Marketing Ad Generator
+# AI Video Marketing Ad Generator
 
 > A fully local, resource-aware AI pipeline that transforms a single text prompt into a complete marketing video — including script, visuals, voiceover, motion effects, and final rendering.
 
@@ -6,7 +6,7 @@ Specifically engineered to run on **low-VRAM hardware (4GB GPU)** using quantiza
 
 ---
 
-## 🧠 What This Project Demonstrates
+## What This Project Demonstrates
 
 This is a **memory-constrained AI systems engineering project** focused on:
 
@@ -19,7 +19,7 @@ This is a **memory-constrained AI systems engineering project** focused on:
 
 ---
 
-## 🏗️ System Architecture (Runtime Flow)
+## System Architecture (Runtime Flow)
 
 ```
 User Prompt
@@ -38,7 +38,7 @@ User Prompt
 
 ---
 
-## ⚙️ Default Runtime Configuration (4GB Optimized Mode)
+## Default Runtime Configuration (4GB Optimized Mode)
 
 | Component        | Value    |
 |------------------|----------|
@@ -52,7 +52,7 @@ User Prompt
 
 ---
 
-## 🤖 Models Used
+## Models Used
 
 ### Text Model — Gemma 2 2B IT
 
@@ -71,7 +71,7 @@ User Prompt
 
 ---
 
-## 💾 Model Storage
+## Model Storage
 
 Models are downloaded once from Hugging Face and stored locally:
 
@@ -83,13 +83,13 @@ models/
 
 Runtime loading uses `local_files_only=True`, which guarantees:
 
-- ✅ No runtime downloads
-- ✅ Fully offline operation
-- ✅ Faster startup
+- No runtime downloads
+- Fully offline operation
+- Faster startup
 
 ---
 
-## 🖥️ Hardware Compatibility
+## Hardware Compatibility
 
 Tested on:
 
@@ -103,7 +103,7 @@ Tested on:
 
 ---
 
-## 📊 Performance Benchmarks (RTX 2050)
+## Performance Benchmarks (RTX 2050)
 
 Example run (3 scenes, ~23s video):
 
@@ -120,7 +120,7 @@ Example run (3 scenes, ~23s video):
 
 ---
 
-## 📦 Output
+## Output
 
 Each generation produces:
 
@@ -146,7 +146,7 @@ output/
 
 ---
 
-## 🚀 Installation
+## Installation
 
 **1. Clone the repository**
 
@@ -190,7 +190,7 @@ The system loads models strictly from local storage using `local_files_only=True
 
 ---
 
-## ▶️ Running the Server
+## Running the Server
 
 ```bash
 python app.py
@@ -209,7 +209,7 @@ Pipeline ready
 
 ---
 
-## 🌐 Web Interface
+## Web Interface
 
 Open `http://localhost:5000` in your browser.
 
@@ -221,7 +221,7 @@ Features:
 
 ---
 
-## 💡 Example Prompt
+## Example Prompt
 
 ```
 Create a marketing video for an AI-powered productivity app designed for students.
@@ -238,7 +238,7 @@ Typical output:
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 ai-video-ad-generator/
@@ -267,7 +267,7 @@ ai-video-ad-generator/
 
 ---
 
-## 📋 Logging and Instrumentation
+## Logging and Instrumentation
 
 The pipeline includes detailed runtime instrumentation. Each run records:
 
@@ -325,7 +325,7 @@ Logs are stored in the `logs/` directory.
 
 ---
 
-## 🔮 Future Improvements
+## Future Improvements
 
 - [ ] Higher resolution generation
 - [ ] 5-scene runtime mode
