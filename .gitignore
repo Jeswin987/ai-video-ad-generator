@@ -27,3 +27,5 @@ Thumbs.db
 *.jpg
 *.jpeg
 *.json
+# Pytest cache
+.pytest_cache/
