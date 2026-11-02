@@ -13,6 +13,8 @@ from datetime import datetime
 # Import pipeline + config
 from src.core.video_generation_pipeline import VideoGenerationPipeline
 from src.core.config import Config
+from src.core.measurement import JobMeasurement, setup_logging
+from werkzeug.serving import is_running_from_reloader
 
 # Initialize Flask app
 app = Flask(__name__,
@@ -76,6 +78,7 @@ def update_job_status(job_id, status, progress=None, message=None, video_path=No
 
 def generate_video_task(job_id, prompt, visual_theme, output_dir):
     """Background task for video generation"""
+    job_measurement = JobMeasurement(job_id).start()
     try:
         logger.info(f"🎬 Starting video generation for job {job_id}")
         update_job_status(job_id, 'processing', 0, 'Initializing...')
@@ -114,6 +117,9 @@ def generate_video_task(job_id, prompt, visual_theme, output_dir):
     except Exception as e:
         logger.error(f"❌ Job {job_id} failed: {e}")
         update_job_status(job_id, 'failed', 100, f'Error: {str(e)}')
+
+    finally:
+        job_measurement.finish()
 
 # =====================================================================
 # HEALTH CHECK ENDPOINT (CRITICAL FIX)
@@ -310,6 +316,11 @@ def after_request(response):
 # =====================================================================
 
 if __name__ == '__main__':
+    # debug=True below starts Werkzeug's reloader, which runs this block twice:
+    # in a watcher process and in the serving child. Only the child writes a run log.
+    if is_running_from_reloader():
+        setup_logging(Config.LOGS_DIR)
+
     # Initialize config
     if not Config.initialize():
         logger.error("❌ Failed to initialize configuration")

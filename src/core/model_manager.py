@@ -10,6 +10,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from typing import Optional
 from src.core.config import Config
+from src.core.measurement import Stage
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,8 @@ class ModelManager:
         """Initialize model manager (only once)"""
         if not ModelManager._initialized:
             logger.info("🔧 Initializing ModelManager...")
-            self._load_model()
+            with Stage("Gemma Loading"):
+                self._load_model()
             ModelManager._initialized = True
 
     def _load_model(self):
