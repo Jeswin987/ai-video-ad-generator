@@ -134,6 +134,9 @@ class Config:
     DEFAULT_FONT_SIZE = int(os.getenv("DEFAULT_FONT_SIZE", "40"))  # Reduced from 48
     FALLBACK_FONT_ENABLED = True
 
+    # Server host: localhost only by default. Set APP_HOST=0.0.0.0 to opt in to LAN access.
+    APP_HOST = os.getenv("APP_HOST", "127.0.0.1")
+
     # ============================================================================
     # CLASS METHODS
     # ============================================================================

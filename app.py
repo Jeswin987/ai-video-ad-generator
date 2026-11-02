@@ -14,7 +14,6 @@ from datetime import datetime
 from src.core.video_generation_pipeline import VideoGenerationPipeline
 from src.core.config import Config
 from src.core.measurement import JobMeasurement, setup_logging
-from werkzeug.serving import is_running_from_reloader
 
 # Initialize Flask app
 app = Flask(__name__,
@@ -315,11 +314,20 @@ def after_request(response):
 # MAIN ENTRY POINT
 # =====================================================================
 
+LOCAL_HOSTS = ("127.0.0.1", "localhost")
+
+
+def get_run_options(config=Config):
+    """Server run arguments. Debug is always off: no Werkzeug debugger, no reloader."""
+    return {
+        'host': config.APP_HOST,
+        'port': 5000,
+        'debug': False,
+    }
+
+
 if __name__ == '__main__':
-    # debug=True below starts Werkzeug's reloader, which runs this block twice:
-    # in a watcher process and in the serving child. Only the child writes a run log.
-    if is_running_from_reloader():
-        setup_logging(Config.LOGS_DIR)
+    setup_logging(Config.LOGS_DIR)
 
     # Initialize config
     if not Config.initialize():
@@ -334,8 +342,12 @@ if __name__ == '__main__':
     logger.info(f"Text Model: {Config.HF_MODEL_NAME}")
     logger.info(f"Image Generation: {'Enabled' if Config.USE_IMAGE_GENERATION else 'Disabled'}")
     logger.info(f"Video Resolution: {Config.VIDEO_WIDTH}x{Config.VIDEO_HEIGHT}")
+    run_options = get_run_options()
+    logger.info(f"Address: http://{run_options['host']}:{run_options['port']}")
     logger.info("=" * 70)
+    if run_options['host'] not in LOCAL_HOSTS:
+        logger.warning(f"⚠ APP_HOST={run_options['host']}: the server is reachable from the network")
     
-    # Start server
-    socketio.run(app, host='0.0.0.0', port=5000,
-                debug=True, allow_unsafe_werkzeug=True)
+    # Start server. Flask-SocketIO refuses to start Werkzeug without
+    # allow_unsafe_werkzeug=True when stdin is not a TTY (e.g. Git Bash/mintty, IDEs).
+    socketio.run(app, **run_options, allow_unsafe_werkzeug=True)
