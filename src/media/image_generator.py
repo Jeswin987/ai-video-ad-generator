@@ -144,11 +144,19 @@ class ImageGenerator:
         """
         visual_desc = scene.get('visual_description', '').lower()
 
+        # Anchors from the scene descriptor win; keywords are the fallback per field
+        character_anchor = str(scene.get('character_anchor', '')).strip()
+        setting_anchor = str(scene.get('setting_anchor', '')).strip()
+        lighting_anchor = str(scene.get('lighting_anchor', '')).strip()
+
         if is_first_scene or not self._visual_context['main_subject']:
             # Extract key visual elements from first scene
 
             # Subject identification (ENHANCED)
-            if 'woman' in visual_desc or 'female' in visual_desc:
+            if character_anchor:
+                self._visual_context['main_subject'] = character_anchor
+
+            elif 'woman' in visual_desc or 'female' in visual_desc:
                 self._visual_context['main_subject'] = 'young professional woman'
                 # Try to extract more details
                 if 'blonde' in visual_desc:
@@ -174,12 +182,15 @@ class ImageGenerator:
             elif 'person' in visual_desc or 'people' in visual_desc:
                 self._visual_context['main_subject'] = 'young professional'
 
-            # Age range detection (NEW)
-            if 'young' in visual_desc or '20s' in visual_desc or '30s' in visual_desc:
+            # Age range detection (NEW) - the character anchor already describes age
+            if not character_anchor and (
+                    'young' in visual_desc or '20s' in visual_desc or '30s' in visual_desc):
                 self._visual_context['age_range'] = 'mid-20s to early 30s'
 
             # Extract setting
-            if 'office' in visual_desc or 'desk' in visual_desc or 'workspace' in visual_desc:
+            if setting_anchor:
+                self._visual_context['setting'] = setting_anchor
+            elif 'office' in visual_desc or 'desk' in visual_desc or 'workspace' in visual_desc:
                 self._visual_context['setting'] = 'modern office workspace'
             elif 'gym' in visual_desc or 'fitness' in visual_desc or 'workout' in visual_desc:
                 self._visual_context['setting'] = 'modern fitness center'
@@ -193,7 +204,9 @@ class ImageGenerator:
                 self._visual_context['setting'] = 'clean professional minimalist setting'
 
             # Extract lighting
-            if 'morning' in visual_desc or 'sunrise' in visual_desc:
+            if lighting_anchor:
+                self._visual_context['lighting_style'] = lighting_anchor
+            elif 'morning' in visual_desc or 'sunrise' in visual_desc:
                 self._visual_context['lighting_style'] = 'warm golden hour morning light'
             elif 'evening' in visual_desc or 'sunset' in visual_desc:
                 self._visual_context['lighting_style'] = 'warm sunset golden hour lighting'

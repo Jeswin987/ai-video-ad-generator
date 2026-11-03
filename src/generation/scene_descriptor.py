@@ -426,7 +426,10 @@ Use REAL details. Describe like you're directing a photographer."""
                 "visual_description": scene.get("visual", "Scene visual"),
                 "voiceover_script": scene.get("voiceover", "Scene audio"),
                 "camera_motion": scene.get("camera", "medium shot"),
-                "text_overlay": scene.get("text_overlay", "")
+                "text_overlay": scene.get("text_overlay", ""),
+                "character_anchor": scene.get("character_anchor", ""),
+                "setting_anchor": scene.get("setting_anchor", ""),
+                "lighting_anchor": scene.get("lighting_anchor", "")
             }
             normalized_scenes.append(normalized)
 
