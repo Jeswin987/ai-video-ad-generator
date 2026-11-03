@@ -117,19 +117,19 @@ Lighting: {lighting_hint}
 IMPORTANT: Describe visuals like a PHOTOGRAPHER, not an artist.
 
 Instructions:
-1. Describe the character like a real person (age 25-35, specific hair color, clothing details)
-2. Describe the setting like a real location (modern office with glass windows, wooden desk, plants)
-3. Describe lighting like a photographer (natural window light from left, soft shadows, golden hour)
+1. Describe the character type above like a real person (specific age, hair, clothing details)
+2. Describe the setting type above like a real location (specific furniture, materials, objects)
+3. Describe the lighting above like a photographer (light direction, shadows, time of day)
 4. Use concrete details, not abstract words
 
 Output ONLY this JSON:
 {{
   "scene_number": 1,
   "duration": 5,
-  "character_anchor": "mid-30s woman with shoulder-length brown hair, wearing navy blue blazer and white shirt, natural makeup",
-  "setting_anchor": "modern office with floor-to-ceiling windows, oak desk, green plants on shelf, white walls",
-  "lighting_anchor": "bright natural daylight from left side, soft shadows, morning light at 10am",
-  "visual": "Woman sitting at desk looking frustrated at laptop screen, papers scattered around, coffee cup nearby",
+  "character_anchor": "{character_hint}",
+  "setting_anchor": "{setting_hint}",
+  "lighting_anchor": "{lighting_hint}",
+  "visual": "{character_hint} in {setting_hint}",
   "camera": "medium shot from slightly above, static camera",
   "voiceover": "{hook[:80]}"
 }}
