@@ -10,11 +10,84 @@ import cv2
 import numpy as np
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, List
 
 from src.core.config import Config
 
 logger = logging.getLogger(__name__)
+
+# Overlay text fitting
+MAX_OVERLAY_LINES = 2
+MIN_OVERLAY_FONT_SIZE = 20
+OVERLAY_FONT_STEP = 2
+OVERLAY_PADDING = 20  # background box padding around the text
+OVERLAY_STROKE_WIDTH = 2
+OVERLAY_LINE_SPACING = 6
+
+
+def _wrap_words(text: str, font, max_width: int) -> List[str]:
+    """Greedy word wrap: each line holds as many words as fit in max_width"""
+    lines = []
+    current = ""
+    for word in text.split():
+        candidate = f"{current} {word}" if current else word
+        if current and font.getlength(candidate) > max_width:
+            lines.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    return lines
+
+
+def _truncate_line(line: str, font, max_width: int) -> str:
+    """Cut a line (by words, then characters) and add "..." until it fits"""
+    if font.getlength(line) <= max_width:
+        return line
+    words = line.split()
+    while len(words) > 1 and font.getlength(" ".join(words) + "...") > max_width:
+        words.pop()
+    line = " ".join(words)
+    while line and font.getlength(line + "...") > max_width:
+        line = line[:-1]
+    return line.rstrip(" ,;:-") + "..."
+
+
+def fit_overlay_text(text: str, font, max_width: int) -> Tuple[List[str], object]:
+    """
+    Fit overlay text into at most MAX_OVERLAY_LINES lines of max_width pixels
+
+    Wraps at word boundaries; if the lines still don't fit, reduces the font
+    size step by step down to MIN_OVERLAY_FONT_SIZE. If the text is still too
+    long at the minimum size, the last line is cut and ends with "...".
+
+    Args:
+        text: Overlay text
+        font: Pillow font the renderer uses (resized via font_variant)
+        max_width: Maximum line width in pixels
+
+    Returns:
+        (lines, font) - the lines to draw and the font to draw them with
+    """
+    while True:
+        lines = _wrap_words(text, font, max_width)
+        fits = all(font.getlength(line) <= max_width for line in lines)
+        if len(lines) <= MAX_OVERLAY_LINES and fits:
+            return lines, font
+
+        # Bitmap fonts have no size and can't be resized
+        size = getattr(font, "size", None)
+        if size is None or size - OVERLAY_FONT_STEP < MIN_OVERLAY_FONT_SIZE:
+            break
+        font = font.font_variant(size=size - OVERLAY_FONT_STEP)
+
+    # Still too long at the minimum size: keep the first lines, mark the cut
+    cut = len(lines) > MAX_OVERLAY_LINES
+    lines = lines[:MAX_OVERLAY_LINES]
+    if cut:
+        lines[-1] += "..."
+    return [_truncate_line(line, font, max_width) for line in lines], font
 
 
 class VideoGeneratorWithImages:
@@ -534,17 +607,25 @@ class VideoGeneratorWithImages:
         overlay = Image.new('RGBA', frame.size, (0, 0, 0, 0))
         overlay_draw = ImageDraw.Draw(overlay)
 
+        # Fit text inside the frame, leaving room for the box padding and stroke
+        padding = OVERLAY_PADDING
+        stroke_width = OVERLAY_STROKE_WIDTH
+        max_text_width = self.width - 2 * (padding + stroke_width + 10)
+        lines, font = fit_overlay_text(text, font, max_text_width)
+        if not lines:
+            return frame
+
         # Get text size
-        bbox = overlay_draw.textbbox((0, 0), text, font=font)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
+        line_bboxes = [overlay_draw.textbbox((0, 0), line, font=font) for line in lines]
+        line_height = max(b[3] - b[1] for b in line_bboxes)
+        text_width = max(b[2] - b[0] for b in line_bboxes)
+        text_height = line_height * len(lines) + OVERLAY_LINE_SPACING * (len(lines) - 1)
 
-        # Center text horizontally, bottom 15% vertically
+        # Center text horizontally, bottom 15% vertically; extra lines grow upwards
         x = (self.width - text_width) // 2
-        y = int(self.height * 0.85)
+        y = int(self.height * 0.85) - (text_height - line_height)
 
-        # Draw semi-transparent background box for readability
-        padding = 20
+        # Draw semi-transparent background box for readability, sized to the lines
         box_coords = [
             x - padding,
             y - padding,
@@ -559,24 +640,28 @@ class VideoGeneratorWithImages:
             fill=(0, 0, 0, int(180 * (opacity / 255)))  # Semi-transparent black
         )
 
-        # Draw text with stroke for better readability
-        stroke_width = 2
-        for adj_x in range(-stroke_width, stroke_width + 1):
-            for adj_y in range(-stroke_width, stroke_width + 1):
-                overlay_draw.text(
-                    (x + adj_x, y + adj_y),
-                    text,
-                    fill=(0, 0, 0, opacity),  # Black outline
-                    font=font
-                )
+        for i, line in enumerate(lines):
+            # Center each line within the frame
+            line_x = (self.width - (line_bboxes[i][2] - line_bboxes[i][0])) // 2
+            line_y = y + i * (line_height + OVERLAY_LINE_SPACING)
 
-        # Main text
-        overlay_draw.text(
-            (x, y),
-            text,
-            fill=(255, 255, 255, opacity),  # White text
-            font=font
-        )
+            # Draw text with stroke for better readability
+            for adj_x in range(-stroke_width, stroke_width + 1):
+                for adj_y in range(-stroke_width, stroke_width + 1):
+                    overlay_draw.text(
+                        (line_x + adj_x, line_y + adj_y),
+                        line,
+                        fill=(0, 0, 0, opacity),  # Black outline
+                        font=font
+                    )
+
+            # Main text
+            overlay_draw.text(
+                (line_x, line_y),
+                line,
+                fill=(255, 255, 255, opacity),  # White text
+                font=font
+            )
 
         # Composite overlay onto frame
         frame_rgba = frame.convert('RGBA')
