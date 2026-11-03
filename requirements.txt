@@ -1,22 +1,28 @@
-Pillow
-accelerate
-bitsandbytes
-diffusers
-gTTS
-huggingface-hub
-numpy
-opencv-python
-pydub
-safetensors
-scipy
-streamlit
-torch
-torchvision
-transformers
+# Install the CUDA build of torch FIRST, from the PyTorch package index
+# (this venv uses the cu128 build: 2.11.0+cu128). On Windows, the torch
+# package on PyPI is CPU-only, so a plain `pip install -r requirements.txt`
+# would install a build without CUDA.
+torch==2.11.0
 
-flask
-flask-cors
-flask-socketio
-python-socketio
-eventlet
-python-engineio
+# Text and image models
+transformers==5.22.1
+diffusers==0.42.1
+# Not imported directly: transformers needs it for device_map="cuda"
+# (model_manager.py) and diffusers for enable_sequential_cpu_offload()
+# (image_generator.py)
+accelerate==1.15.0
+# Not imported directly: BitsAndBytesConfig(load_in_4bit=True) needs it to
+# load Gemma in 4-bit on CUDA (model_manager.py)
+bitsandbytes==0.50.2
+
+# Media
+numpy==2.5.4
+opencv-python==5.0.0.93
+Pillow==13.0.0
+# 2.2.4 is the version pip resolved and the one verified in a real run
+gTTS==2.2.4
+
+# Web server
+flask==3.1.3
+flask-cors==6.0.5
+flask-socketio==5.7.1
