@@ -4,6 +4,7 @@ Automatically detects CUDA and handles low-memory GPUs gracefully.
 FIXED: Added use_gpu property for compatibility
 """
 
+import gc
 import logging
 import time
 import torch
@@ -216,6 +217,16 @@ class ModelManager:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             logger.info("🧹 GPU cache cleared")
+
+    def unload(self):
+        """Drop model and tokenizer so their memory can be freed; the next ModelManager() reloads them"""
+        ModelManager._model = None
+        ModelManager._tokenizer = None
+        ModelManager._initialized = False
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        logger.info("🗑️ Gemma unloaded")
 
     def reload_model(self):
         """Reload model manually"""

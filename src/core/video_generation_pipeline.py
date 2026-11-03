@@ -442,23 +442,13 @@ class VideoGenerationPipeline:
     def _unload_text_models(self):
         """Unload text generation models to free VRAM"""
         try:
-            # Access the shared model manager
-            from src.core.model_manager import ModelManager
-            manager = ModelManager()
+            # The generators keep their own references to the shared model
+            for generator in (self.storyline_gen, self.scene_gen):
+                generator.model = None
+                generator.tokenizer = None
 
-            # Clear model
-            if hasattr(manager, 'model'):
-                del manager.model
-            if hasattr(manager, 'tokenizer'):
-                del manager.tokenizer
-
-            # Reset initialization flag
-            ModelManager._initialized = False
-            ModelManager._model = None
-            ModelManager._tokenizer = None
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+            # Drop the shared model; the next pipeline loads it again
+            self.storyline_gen.manager.unload()
 
             logger.info("✅ Text models unloaded")
         except Exception as e:
