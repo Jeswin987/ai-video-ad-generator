@@ -69,9 +69,15 @@ class VoiceoverGenerator:
             logger.error(f"❌ Could not estimate duration: {str(e)}")
             return None
 
-    def generate(self, scene: Dict[str, Any], output_filename: str) -> Optional[Path]:
+    def generate(
+            self,
+            scene: Dict[str, Any],
+            output_filename: str,
+            output_dir: Optional[Path] = None
+    ) -> Optional[Path]:
         """
         Generate voiceover with retry logic
+        Writes into output_dir (the job's folder), or Config.OUTPUT_DIR if not given
         """
         script = scene.get('voiceover_script', '')
         scene_num = scene.get('scene_number', 1)
@@ -83,7 +89,7 @@ class VoiceoverGenerator:
         logger.info(f"🎤 Generating voiceover for Scene {scene_num}...")
         logger.info(f"📝 Script: {script[:80]}...")
 
-        audio_path = Config.OUTPUT_DIR / output_filename
+        audio_path = (output_dir or Config.OUTPUT_DIR) / output_filename
 
         # Retry loop for gTTS (network-dependent)
         for attempt in range(1, Config.TTS_RETRY_ATTEMPTS + 1):
@@ -132,7 +138,8 @@ class VoiceoverGenerator:
             scene: Dict[str, Any],
             output_filename: str,
             target_duration: Optional[float] = None,
-            tolerance: float = 0.5
+            tolerance: float = 0.5,
+            output_dir: Optional[Path] = None
     ) -> Tuple[Optional[Path], Optional[float]]:
         """
         Generate voiceover and return both path and measured duration
@@ -143,12 +150,13 @@ class VoiceoverGenerator:
             output_filename: Output MP3 filename
             target_duration: Optional target duration in seconds
             tolerance: Acceptable duration difference (seconds)
+            output_dir: Folder for the MP3 (the job's folder); Config.OUTPUT_DIR if not given
 
         Returns:
             Tuple of (audio_path, measured_duration)
         """
         # Generate TTS
-        audio_path = self.generate(scene, output_filename)
+        audio_path = self.generate(scene, output_filename, output_dir)
 
         if not audio_path:
             return None, None

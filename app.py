@@ -227,7 +227,12 @@ def download_video(job_id):
     video_path = job.get('video_path')
     if not video_path or not Path(video_path).exists():
         return jsonify({'error': 'Video not found'}), 404
-    
+
+    # Only serve a file from this job's own folder
+    job_dir = (Config.OUTPUT_DIR / job_id).resolve()
+    if job_dir not in Path(video_path).resolve().parents:
+        return jsonify({'error': 'Video not found'}), 404
+
     return send_file(video_path,
                     mimetype='video/mp4',
                     as_attachment=True,

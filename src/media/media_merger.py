@@ -39,10 +39,12 @@ class MediaMerger:
             self,
             video_path: Path,
             audio_path: Path,
-            output_filename: str
+            output_filename: str,
+            output_dir: Optional[Path] = None
     ) -> Optional[Path]:
         """
         Merge video and audio for a single scene
+        Writes into output_dir (the job's folder), or Config.OUTPUT_DIR if not given
         """
         if not video_path.exists():
             logger.error(f"❌ Video file not found: {video_path}")
@@ -52,7 +54,7 @@ class MediaMerger:
             logger.error(f"❌ Audio file not found: {audio_path}")
             return None
 
-        output_path = Config.OUTPUT_DIR / output_filename
+        output_path = (output_dir or Config.OUTPUT_DIR) / output_filename
 
         logger.info(f"🔗 Merging {video_path.name} + {audio_path.name}...")
 
@@ -98,11 +100,13 @@ class MediaMerger:
     def concatenate_videos(
             self,
             video_paths: List[Path],
-            output_filename: str
+            output_filename: str,
+            output_dir: Optional[Path] = None
     ) -> Optional[Path]:
         """
         Concatenate multiple videos into one final video
         Fixed method name (was 'concatenate' in original)
+        Writes the video and its concat list into output_dir (the job's folder) if given
         """
         if not video_paths:
             logger.error("❌ No videos to concatenate")
@@ -117,10 +121,10 @@ class MediaMerger:
         logger.info(f"🎬 Concatenating {len(video_paths)} videos...")
 
         try:
-            output_path = Config.OUTPUT_DIR / output_filename
+            output_path = (output_dir or Config.OUTPUT_DIR) / output_filename
 
             # Create concat file list
-            concat_file = Config.TEMP_DIR / "concat_list.txt"
+            concat_file = (output_dir or Config.TEMP_DIR) / "concat_list.txt"
             with open(concat_file, 'w', encoding='utf-8') as f:
                 for video_path in video_paths:
                     # Use absolute path and escape special characters

@@ -209,7 +209,7 @@ class VideoGenerationPipeline:
 
             for idx, scene in enumerate(scenes):
                 scene_num = scene.get('scene_number', idx + 1)
-                audio_filename = f"audio_scene_{scene_num}_{int(time.time() * 1000)}.mp3"
+                audio_filename = f"audio_scene_{scene_num}.mp3"
 
                 # Generate voiceover with duration sync
                 logger.info(f"🎤 Scene {scene_num}: Generating voiceover...")
@@ -221,11 +221,12 @@ class VideoGenerationPipeline:
                         scene=scene,
                         output_filename=audio_filename,
                         target_duration=target_duration if Config.ALLOW_DURATION_ADJUSTMENT else None,
-                        tolerance=Config.DURATION_SYNC_TOLERANCE
+                        tolerance=Config.DURATION_SYNC_TOLERANCE,
+                        output_dir=audio_dir
                     )
                 else:
                     # Legacy method
-                    audio_path = self.voiceover_gen.generate(scene, audio_filename)
+                    audio_path = self.voiceover_gen.generate(scene, audio_filename, audio_dir)
                     measured_duration = self.voiceover_gen.get_audio_duration(audio_path) if audio_path else None
 
                 if not audio_path:
@@ -263,9 +264,6 @@ class VideoGenerationPipeline:
                     )
 
                 audio_files.append(audio_path)
-
-                # Small delay to avoid timestamp collisions
-                time.sleep(0.01)
 
             if len(audio_files) != len(scenes):
                 logger.error(f"❌ Audio generation incomplete: {len(audio_files)}/{len(scenes)}")
@@ -355,7 +353,8 @@ class VideoGenerationPipeline:
                     logger.info("🔗 Concatenating scene videos...")
                     final_video = self.media_merger.concatenate_videos(
                         video_paths=video_files,
-                        output_filename="concatenated_video.mp4"
+                        output_filename="concatenated_video.mp4",
+                        output_dir=output_dir
                     )
                 else:
                     final_video = video_files[0]
@@ -365,7 +364,8 @@ class VideoGenerationPipeline:
                 final_video = self.media_merger.merge_scene(
                     video_path=final_video,
                     audio_path=merged_audio,
-                    output_filename="final_video_with_audio.mp4"
+                    output_filename="final_video_with_audio.mp4",
+                    output_dir=output_dir
                 )
             else:
                 # Fallback: merge individual audio per scene
@@ -375,7 +375,8 @@ class VideoGenerationPipeline:
                     merged = self.media_merger.merge_scene(
                         video_path=video,
                         audio_path=audio,
-                        output_filename=f"merged_scene_{idx + 1}.mp4"
+                        output_filename=f"merged_scene_{idx + 1}.mp4",
+                        output_dir=output_dir
                     )
                     if merged:
                         merged_videos.append(merged)
@@ -385,7 +386,8 @@ class VideoGenerationPipeline:
                     logger.info("🔗 Concatenating merged scene videos...")
                     final_video = self.media_merger.concatenate_videos(
                         video_paths=merged_videos,
-                        output_filename="final_video.mp4"
+                        output_filename="final_video.mp4",
+                        output_dir=output_dir
                     )
                 else:
                     final_video = merged_videos[0] if merged_videos else None
