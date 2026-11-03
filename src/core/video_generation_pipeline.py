@@ -7,7 +7,7 @@ ENHANCED: Scene normalization, duration sync, and optional upscaling
 
 import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Callable
 import torch
 import time
 
@@ -24,6 +24,8 @@ from src.media.image_upscaler import ImageUpscaler
 from src.core.measurement import Stage
 
 logger = logging.getLogger(__name__)
+
+TOTAL_STAGES = 7
 
 
 class VideoGenerationPipeline:
@@ -54,9 +56,16 @@ class VideoGenerationPipeline:
             self,
             prompt: str,
             visual_theme: str = "professional blue",
-            output_dir: Optional[Path] = None
+            output_dir: Optional[Path] = None,
+            on_stage: Optional[Callable[[int, str], None]] = None
     ) -> Optional[Path]:
         start_total = time.time()
+
+        def report_stage(stage: int, message: str) -> None:
+            # Progress marks which stage has started, not time remaining;
+            # it stays below 100 until the caller reports completion
+            if on_stage:
+                on_stage(stage * 100 // (TOTAL_STAGES + 1), f"Stage {stage}/{TOTAL_STAGES}: {message}")
 
         """
         Generate complete video with AI images
@@ -94,6 +103,7 @@ class VideoGenerationPipeline:
             llm_stage = Stage("LLM + Scene Structuring").start()
 
             logger.info("\n📖 STAGE 1: Generating storyline...")
+            report_stage(1, "Generating storyline")
             storyline = self.storyline_gen.generate(prompt)
             if not storyline:
                 logger.error("❌ Storyline generation failed")
@@ -103,6 +113,7 @@ class VideoGenerationPipeline:
             # STAGE 2: Generate scenes
             # ================================================================
             logger.info("\n🎬 STAGE 2: Generating scene descriptions...")
+            report_stage(2, "Generating scene descriptions")
             scenes = self.scene_gen.generate_scenes(storyline)
             if not scenes:
                 logger.error("❌ Scene generation failed")
@@ -138,6 +149,7 @@ class VideoGenerationPipeline:
                 image_stage = Stage("Image Generation").start()
 
                 logger.info("\n🎨 STAGE 3: Generating AI images...")
+                report_stage(3, "Generating images")
                 logger.info("⚠️ Unloading text model to free VRAM...")
 
                 # Unload text model completely
@@ -172,6 +184,7 @@ class VideoGenerationPipeline:
 
             else:
                 logger.info("\n🎨 STAGE 3: Skipping image generation (using theme colors)")
+                report_stage(3, "Skipping images (using theme colors)")
 
             # ================================================================
             # STAGE 3.5: Optional Image Upscaling
@@ -201,6 +214,7 @@ class VideoGenerationPipeline:
             voice_stage = Stage("Voiceover Generation").start()
 
             logger.info("\n🎤 STAGE 4: Generating voiceovers with duration sync...")
+            report_stage(4, "Generating voiceovers")
             audio_dir = output_dir / "audio"
             audio_dir.mkdir(parents=True, exist_ok=True)
 
@@ -283,6 +297,7 @@ class VideoGenerationPipeline:
             audio_merge_stage = Stage("Audio Merge").start()
 
             logger.info("\n🎵 STAGE 5: Merging continuous audio track...")
+            report_stage(5, "Merging audio")
             merged_audio_path = output_dir / "merged_audio.mp3"
 
             try:
@@ -307,6 +322,7 @@ class VideoGenerationPipeline:
             video_gen_stage = Stage("Scene Video Generation").start()
 
             logger.info("\n🎥 STAGE 6: Creating videos...")
+            report_stage(6, "Creating scene videos")
             videos_dir = output_dir / "videos"
             videos_dir.mkdir(parents=True, exist_ok=True)
 
@@ -346,6 +362,7 @@ class VideoGenerationPipeline:
             final_merge_stage = Stage("Final Assembly").start()
 
             logger.info("\n🎬 STAGE 7: Assembling final video...")
+            report_stage(7, "Assembling final video")
 
             if merged_audio:
                 # If multiple videos, concatenate them first

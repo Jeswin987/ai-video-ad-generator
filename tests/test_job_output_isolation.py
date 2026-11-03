@@ -6,6 +6,7 @@ OUTPUT_DIR and TEMP_DIR point into tmp_path.
 """
 
 import subprocess
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -57,6 +58,10 @@ class FakeTTS:
         Path(path).write_text(self.text)
 
 
+def fail_on_sleep(seconds):
+    raise AssertionError(f"time.sleep({seconds}) called during a job")
+
+
 @pytest.fixture
 def env(monkeypatch, tmp_path):
     output_root = tmp_path / "output"
@@ -96,7 +101,8 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setattr(pipeline_module, "SceneDescriptor", FakeSceneDescriptor)
     monkeypatch.setattr(pipeline_module, "VideoGeneratorWithImages", FakeVideoGenerator)
     monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
-    monkeypatch.setattr(app_module.time, "sleep", lambda seconds: None)
+    # Nothing on the faked job path should sleep (the old progress loop did)
+    monkeypatch.setattr(time, "sleep", fail_on_sleep)
     monkeypatch.setattr(app_module.socketio, "emit", lambda *args, **kwargs: None)
     monkeypatch.setattr(app_module, "jobs", {})
     return state
@@ -151,6 +157,49 @@ def test_second_job_does_not_overwrite_the_first(env, tmp_path):
     new_files = [p for p in files_after if p not in files_a]
     assert new_files
     assert all(env.output_root / "job-b" in p.parents for p in new_files)
+
+
+def assert_seven_stages_in_order(updates):
+    """updates: (progress, message) pairs reported for the pipeline stages."""
+    assert [m.split(":")[0] for _, m in updates] == [f"Stage {n}/7" for n in range(1, 8)]
+    progress = [p for p, _ in updates]
+    assert progress == sorted(set(progress))  # strictly increasing
+    assert all(0 < p < 100 for p in progress)
+
+
+def test_pipeline_reports_all_seven_stages_in_order(env):
+    output_dir = env.output_root / "job-a"
+    output_dir.mkdir()
+    updates = []
+
+    final_video = VideoGenerationPipeline().generate_video(
+        prompt="Ad for job-a",
+        output_dir=output_dir,
+        on_stage=lambda progress, message: updates.append((progress, message)),
+    )
+
+    assert final_video is not None
+    assert_seven_stages_in_order(updates)
+
+
+def test_api_job_reports_real_stages_without_sleeping(env, monkeypatch):
+    calls = []
+    original_update = app_module.update_job_status
+
+    def recording_update(job_id, status, progress=None, message=None, video_path=None):
+        calls.append((status, progress, message))
+        original_update(job_id, status, progress, message, video_path)
+
+    monkeypatch.setattr(app_module, "update_job_status", recording_update)
+
+    run_api_job(env, "job-a")
+
+    assert calls[0] == ("processing", 0, "Initializing...")
+    assert calls[-1][:2] == ("completed", 100)
+    stage_updates = [(p, m) for s, p, m in calls[1:-1]]
+    assert all(s == "processing" for s, _, _ in calls[1:-1])
+    assert_seven_stages_in_order(stage_updates)
+    assert app_module.jobs["job-a"]["status"] == "completed"
 
 
 def run_api_job(env, job_id):

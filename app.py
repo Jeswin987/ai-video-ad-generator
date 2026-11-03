@@ -4,7 +4,6 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 import threading
 import uuid
-import time
 from pathlib import Path
 import json
 import logging
@@ -85,25 +84,13 @@ def generate_video_task(job_id, prompt, visual_theme, output_dir):
         # Initialize pipeline
         pipeline = VideoGenerationPipeline()
         
-        # Simulate progress stages
-        stages = [
-            (10, "Generating storyline..."),
-            (25, "Creating scene descriptions..."),
-            (40, "Generating AI images..."),
-            (60, "Creating voiceovers..."),
-            (75, "Assembling video clips..."),
-            (90, "Finalizing video...")
-        ]
-        
-        for progress, message in stages:
-            update_job_status(job_id, 'processing', progress, message)
-            time.sleep(0.5)  # Simulate work
-        
-        # Generate video
+        # Generate video, reporting each real pipeline stage as it starts
         video_path = pipeline.generate_video(
             prompt=prompt,
             visual_theme=visual_theme,
-            output_dir=Path(output_dir)
+            output_dir=Path(output_dir),
+            on_stage=lambda progress, message: update_job_status(
+                job_id, 'processing', progress, message)
         )
         
         if video_path and video_path.exists():
