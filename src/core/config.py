@@ -238,7 +238,8 @@ class Config:
                 logger.info(f"✅ GPU: {gpu_name}")
                 logger.info(f"✅ VRAM: {vram_total:.2f} GB")
 
-                if vram_total < 4:
+                # 4 GB cards report slightly under 4 GiB (e.g. RTX 2050)
+                if vram_total < 3.9:
                     logger.error("❌ Less than 4GB VRAM - GPU mode not recommended")
                 elif vram_total <= 4.5:
                     logger.warning("⚠ 4GB VRAM - using aggressive optimization")
