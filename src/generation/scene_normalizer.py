@@ -13,6 +13,10 @@ logger = logging.getLogger(__name__)
 MIN_OVERLAY_WORDS = 5
 MAX_OVERLAY_WORDS = 8
 
+# Storyline beat shown on each scene (same mapping as SceneDescriptor's prompts).
+# The last scene always uses the CTA-based overlay instead.
+SCENE_BEATS = {1: "hook", 2: "problem", 3: "solution", 4: "benefit"}
+
 # Common stopwords to filter for cleaner overlays
 STOPWORDS = {
     "the", "a", "an", "and", "or", "but", "so", "to", "for", "of", "in",
@@ -101,7 +105,41 @@ def derive_text_overlay(voiceover: str, storyline: Dict[str, Any]) -> str:
     return _create_overlay(filtered, target_len)
 
 
-def normalize_scene(scene: Dict[str, Any], storyline: Dict[str, Any]) -> Dict[str, Any]:
+def _shorten_phrase(text: str) -> str:
+    """
+    Cut text at a word boundary to at most MAX_OVERLAY_WORDS words
+
+    Keeps the words as written; adds "..." only if words were cut.
+    """
+    words = text.split()
+    if len(words) <= MAX_OVERLAY_WORDS:
+        return " ".join(words)
+    return " ".join(words[:MAX_OVERLAY_WORDS]).rstrip(",;:-") + "..."
+
+
+def beat_text_overlay(scene_index: int, storyline: Dict[str, Any]) -> str:
+    """
+    Overlay from the scene's own storyline beat, or "" if it has none
+
+    Args:
+        scene_index: 1-based position of the scene
+        storyline: Complete storyline dictionary
+
+    Returns:
+        Readable phrase of at most MAX_OVERLAY_WORDS words, or ""
+    """
+    beat = SCENE_BEATS.get(scene_index)
+    if not beat:
+        return ""
+    return _shorten_phrase(str((storyline or {}).get(beat, "")))
+
+
+def normalize_scene(
+        scene: Dict[str, Any],
+        storyline: Dict[str, Any],
+        scene_index: int = None,
+        is_last_scene: bool = True
+) -> Dict[str, Any]:
     """
     Normalize a single scene to standard schema
 
@@ -113,6 +151,8 @@ def normalize_scene(scene: Dict[str, Any], storyline: Dict[str, Any]) -> Dict[st
     Args:
         scene: Raw scene dictionary from SceneDescriptor
         storyline: Complete storyline dictionary
+        scene_index: 1-based position of the scene, used to pick its beat
+        is_last_scene: Last scene keeps the CTA-based overlay
 
     Returns:
         Normalized scene dictionary with standardized keys
@@ -136,7 +176,11 @@ def normalize_scene(scene: Dict[str, Any], storyline: Dict[str, Any]) -> Dict[st
     # Derive or validate text_overlay
     existing_overlay = normalized.get("text_overlay", "").strip()
     if not existing_overlay:
-        normalized["text_overlay"] = derive_text_overlay(
+        beat_overlay = ""
+        if scene_index is not None and not is_last_scene:
+            beat_overlay = beat_text_overlay(scene_index, storyline)
+
+        normalized["text_overlay"] = beat_overlay or derive_text_overlay(
             normalized["voiceover_script"],
             storyline
         )
@@ -164,7 +208,12 @@ def normalize_scenes(
 
     for idx, scene in enumerate(scenes, start=1):
         # Normalize schema
-        norm_scene = normalize_scene(scene, storyline)
+        norm_scene = normalize_scene(
+            scene,
+            storyline,
+            scene_index=idx,
+            is_last_scene=(idx == len(scenes))
+        )
 
         # Apply safety guardrails for downstream modules
 
