@@ -10,14 +10,14 @@ import src.core.config as config_module
 
 @pytest.fixture
 def load_config(monkeypatch):
-    """Reload config.py so APP_HOST is read again; restore a clean Config afterwards."""
+    """Reload config.py so APP_HOST is read again; put the original Config back afterwards."""
+    # Teardown restores the original class, which the other modules still use
+    monkeypatch.setattr(config_module, "Config", config_module.Config)
 
     def _load():
         return importlib.reload(config_module).Config
 
-    yield _load
-    monkeypatch.delenv("APP_HOST", raising=False)
-    importlib.reload(config_module)
+    return _load
 
 
 def test_host_defaults_to_localhost(monkeypatch, load_config):

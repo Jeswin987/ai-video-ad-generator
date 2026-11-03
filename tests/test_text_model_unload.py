@@ -11,8 +11,8 @@ import weakref
 import pytest
 import torch
 
+import src.core.config as config_module
 import src.core.video_generation_pipeline as pipeline_module
-from src.core.config import Config
 from src.core.model_manager import ModelManager
 from src.core.video_generation_pipeline import VideoGenerationPipeline
 
@@ -48,7 +48,9 @@ def load_calls(monkeypatch):
 
     monkeypatch.setattr(ModelManager, "_load_model", fake_load)
     monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
-    monkeypatch.setattr(Config, "ENABLE_UPSCALING", False)
+    # The patch must reach the Config class the pipeline actually reads
+    assert pipeline_module.Config is config_module.Config
+    monkeypatch.setattr(config_module.Config, "ENABLE_UPSCALING", False)
     for name in ("VoiceoverGenerator", "AudioMerger", "MediaMerger"):
         monkeypatch.setattr(pipeline_module, name, FakeComponent)
     return calls

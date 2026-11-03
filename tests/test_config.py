@@ -19,6 +19,8 @@ OVERRIDABLE_VARS = [
 def test_config_defaults(monkeypatch):
     for name in OVERRIDABLE_VARS:
         monkeypatch.delenv(name, raising=False)
+    # Teardown restores the original class, which the other modules still use
+    monkeypatch.setattr(config_module, "Config", config_module.Config)
     Config = importlib.reload(config_module).Config
 
     assert Config.NUM_SCENES == 3
