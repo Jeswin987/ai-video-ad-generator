@@ -13,6 +13,7 @@ from datetime import datetime
 from src.core.video_generation_pipeline import VideoGenerationPipeline
 from src.core.config import Config
 from src.core.measurement import JobMeasurement, setup_logging
+from src.media.image_generator import resolve_theme
 
 # Initialize Flask app
 app = Flask(__name__,
@@ -148,7 +149,7 @@ def generate_video():
             return jsonify({'error': 'Missing prompt'}), 400
         
         prompt = data['prompt']
-        visual_theme = data.get('theme', 'Modern Cool')
+        visual_theme = resolve_theme(data.get('theme'))
         
         # Create job
         job_id = str(uuid.uuid4())

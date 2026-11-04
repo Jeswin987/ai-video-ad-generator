@@ -18,6 +18,35 @@ from src.core.config import Config
 
 logger = logging.getLogger(__name__)
 
+# Theme-based colors for the image prompt
+THEME_COLORS = {
+    'professional blue': 'blue and white corporate colors',
+    'green': 'green and natural earth tones',
+    'purple': 'purple and gold luxury colors',
+    'warm': 'warm orange and yellow tones',
+    'cool': 'cool blue minimalist tones'
+}
+DEFAULT_THEME = 'professional blue'
+
+# Web UI display names that honestly match one of the themes above
+THEME_DISPLAY_NAMES = {
+    'modern cool': 'cool',
+    'warm professional': 'warm',
+}
+
+
+def resolve_theme(name: Optional[str]) -> str:
+    """Map a theme name (a key or a UI display name, any case) to a THEME_COLORS key"""
+    if not name:
+        return DEFAULT_THEME
+    key = name.lower()
+    if key in THEME_COLORS:
+        return key
+    if key in THEME_DISPLAY_NAMES:
+        return THEME_DISPLAY_NAMES[key]
+    logger.warning(f"⚠️ Unknown theme '{name}', using '{DEFAULT_THEME}'")
+    return DEFAULT_THEME
+
 
 class ImageGenerator:
     """Generate images using SDXL-Turbo with 4GB VRAM optimization"""
@@ -274,16 +303,7 @@ class ImageGenerator:
         if scene_number == 1:
             self._extract_visual_context(scene, is_first_scene=True)
 
-        # Theme-based colors
-        theme_colors = {
-            'professional blue': 'blue and white corporate colors',
-            'green': 'green and natural earth tones',
-            'purple': 'purple and gold luxury colors',
-            'warm': 'warm orange and yellow tones',
-            'cool': 'cool blue minimalist tones'
-        }
-
-        color_palette = theme_colors.get(visual_theme.lower(), 'professional blue tones')
+        color_palette = THEME_COLORS[resolve_theme(visual_theme)]
 
         # Camera angle progression
         camera_angles = [

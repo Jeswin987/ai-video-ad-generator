@@ -25,29 +25,6 @@
             </div>
         </header>
 
-        <!-- Server Settings -->
-        <section class="settings-card">
-            <div class="settings-header">
-                <span class="icon">⚙️</span>
-                <h2>Server Settings</h2>
-            </div>
-            <div class="settings-content">
-                <label for="server-url" class="form-label">Server URL</label>
-                <input 
-                    type="text" 
-                    id="server-url" 
-                    class="form-input" 
-                    placeholder="http://192.168.1.10:5000"
-                    value=value="http://192.168.20.4:5000"
-
-                >
-                <p class="helper-text">Enter your laptop's local IP address</p>
-                <button id="save-settings-btn" class="btn btn-secondary">
-                    Save Settings
-                </button>
-            </div>
-        </section>
-
         <!-- Video Generation Form -->
         <section class="generation-card">
             <h2>Create Your Video</h2>
@@ -71,10 +48,11 @@
                         Visual Theme
                     </label>
                     <select id="theme-select" class="form-select">
-                        <option value="Modern Cool">Modern Cool</option>
-                        <option value="Warm Professional">Warm Professional</option>
-                        <option value="Bold Energetic">Bold Energetic</option>
-                        <option value="Elegant Minimal">Elegant Minimal</option>
+                        <option value="cool">Modern Cool</option>
+                        <option value="warm">Warm Professional</option>
+                        <option value="professional blue">Professional Blue (blue and white)</option>
+                        <option value="green">Green (natural earth tones)</option>
+                        <option value="purple">Purple and Gold</option>
                     </select>
                 </div>
 
@@ -95,29 +73,6 @@
                 <div id="progress-percentage" class="progress-percentage">0%</div>
                 
                 <div id="progress-stage" class="progress-stage">Initializing...</div>
-                
-                <div class="progress-steps">
-                    <div id="step-storyline" class="progress-step">
-                        <span class="step-icon">📝</span>
-                        <span class="step-text">Storyline</span>
-                    </div>
-                    <div id="step-images" class="progress-step">
-                        <span class="step-icon">🎨</span>
-                        <span class="step-text">Images</span>
-                    </div>
-                    <div id="step-audio" class="progress-step">
-                        <span class="step-icon">🎤</span>
-                        <span class="step-text">Audio</span>
-                    </div>
-                    <div id="step-video" class="progress-step">
-                        <span class="step-icon">🎬</span>
-                        <span class="step-text">Video</span>
-                    </div>
-                </div>
-
-                <button id="cancel-btn" class="btn btn-secondary">
-                    Cancel
-                </button>
             </div>
 
             <!-- Result Section -->
@@ -131,9 +86,6 @@
                 <div class="result-actions">
                     <button id="download-btn" class="btn btn-primary">
                         📥 Download Video
-                    </button>
-                    <button id="share-btn" class="btn btn-secondary">
-                        📤 Share
                     </button>
                     <button id="new-video-btn" class="btn btn-secondary">
                         ➕ Create New

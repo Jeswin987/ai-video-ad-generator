@@ -19,8 +19,11 @@ const elements = {
     progressStage: document.getElementById('progress-stage'),
     resultSection: document.getElementById('result-section'),
     resultVideo: document.getElementById('result-video'),
+    downloadBtn: document.getElementById('download-btn'),
+    newVideoBtn: document.getElementById('new-video-btn'),
     errorSection: document.getElementById('error-section'),
-    errorMessage: document.getElementById('error-message')
+    errorMessage: document.getElementById('error-message'),
+    retryBtn: document.getElementById('retry-btn')
 };
 
 // Initialize
@@ -44,7 +47,17 @@ async function checkHealth() {
         const data = await response.json();
         updateConnectionStatus('connected', `Connected to ${data.service}`);
     } catch (error) {
-        updateConnectionStatus('disconnected', 'Server Offline');
+        updateConnectionStatus('disconnected', 'Server not reachable');
+    }
+}
+
+// fetch() rejects only when the server can't be reached; HTTP errors still resolve
+async function apiFetch(url, options) {
+    try {
+        return await fetch(url, options);
+    } catch (error) {
+        updateConnectionStatus('disconnected', 'Server not reachable');
+        throw error;
     }
 }
 
@@ -75,7 +88,7 @@ async function generateVideo() {
     showSection(elements.progressSection);
 
     try {
-        const response = await fetch('/api/generate-video', {
+        const response = await apiFetch('/api/generate-video', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt, theme })
@@ -99,7 +112,7 @@ async function generateVideo() {
 function startPolling(jobId) {
     pollingInterval = setInterval(async () => {
         try {
-            const response = await fetch(`/api/status/${jobId}`);
+            const response = await apiFetch(`/api/status/${jobId}`);
             if (!response.ok) throw new Error();
 
             const status = await response.json();
@@ -147,6 +160,32 @@ function showError(message) {
     elements.generateBtn.textContent = 'Generate Video';
 }
 
+function downloadVideo() {
+    if (!currentJobId) return;
+    // The server sends the file as an attachment, so this downloads it
+    const link = document.createElement('a');
+    link.href = `/api/download/${currentJobId}`;
+    link.download = `generated_${currentJobId}.mp4`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
+// Back to the input form; the prompt text is kept. Only the health check calls the server.
+function resetForm() {
+    checkHealth();
+    clearInterval(pollingInterval);
+    currentJobId = null;
+    hideSection(elements.progressSection);
+    hideSection(elements.resultSection);
+    hideSection(elements.errorSection);
+    elements.resultVideo.removeAttribute('src');
+    elements.resultVideo.load();
+    updateProgress(0, 'Initializing...');
+    elements.generateBtn.disabled = false;
+    elements.generateBtn.textContent = 'Generate Video';
+}
+
 function showSection(el) {
     if (el) el.classList.remove('hidden');
 }
@@ -158,5 +197,14 @@ function hideSection(el) {
 function setupEventListeners() {
     if (elements.generateBtn) {
         elements.generateBtn.addEventListener('click', generateVideo);
+    }
+    if (elements.downloadBtn) {
+        elements.downloadBtn.addEventListener('click', downloadVideo);
+    }
+    if (elements.newVideoBtn) {
+        elements.newVideoBtn.addEventListener('click', resetForm);
+    }
+    if (elements.retryBtn) {
+        elements.retryBtn.addEventListener('click', resetForm);
     }
 }

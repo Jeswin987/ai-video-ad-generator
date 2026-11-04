@@ -50,8 +50,12 @@ Caveats, stated once here:
   [PROVENANCE.md section 4](docs/PROVENANCE.md#4-unload-evidence)).
 - Run A and Run B are nine commits apart, not only the unload fix, so not
   every difference between them comes from that fix.
-- Two commits after Run B, `b8b2c48` and `4c72b51`, change only how overlay
-  text is drawn and the text of a startup log message.
+- Later commits change what Run B ran. `b8b2c48` and `4c72b51` change only how
+  overlay text is drawn and the text of a startup log message. The web UI fix
+  that came after them maps theme names to recognised themes, which changes
+  the palette in the image prompts but not the timing or memory path. Both
+  runs sent "Modern Cool", which at the time matched no theme and got the
+  default palette.
 
 ## How it fits in 4 GB
 
@@ -105,10 +109,16 @@ loaded with `local_files_only=True`, so nothing is downloaded at run time.
 ### Web UI
 
 Open http://127.0.0.1:5000. The page checks the server's health, then takes a
-product description and a visual theme. **Generate Video** starts a job; the
-page polls its status every 2 seconds, shows the current stage and percentage,
-and plays the finished video in the page. The other controls do nothing (see
-[Limitations](#limitations)).
+product description and a visual theme (one per recognised theme, Modern
+Cool first).
+**Generate Video** starts a job; the page polls its status every 2 seconds,
+shows the current stage and percentage, and plays the finished video in the
+page. **Download Video** downloads it from `/api/download/<job_id>`. **Create
+New** and, after a failure, **Try Again** return to the input form and keep the
+prompt text. The header's connection status comes from a health check at page
+load, repeated by Create New and Try Again, and changes to "Server not
+reachable" when an API call can't reach the server. There is no cancel: a job
+runs to the end once it has started.
 
 ### API
 
@@ -125,9 +135,11 @@ curl http://127.0.0.1:5000/api/status/<job_id>
 curl -o video.mp4 http://127.0.0.1:5000/api/download/<job_id>
 ```
 
-`theme` is optional. The image prompt recognises `professional blue`,
-`green`, `purple`, `warm` and `cool`; anything else gets the default blue
-palette. `GET /api/health` and `GET /api/jobs` also exist.
+`theme` is optional and sets the image prompt's palette. The recognised themes
+are `professional blue` (the default), `green`, `purple`, `warm` and `cool`.
+The web UI's names "Modern Cool" and "Warm Professional" map to `cool` and
+`warm`. Matching ignores case; an unknown name gets the default and a warning
+in the log. `GET /api/health` and `GET /api/jobs` also exist.
 
 ### Progress stages
 
@@ -183,7 +195,7 @@ pip install -r requirements-dev.txt
 python -m pytest
 ```
 
-52 tests. They need no GPU, model weights or network: a fixture in
+70 tests. They need no GPU, model weights or network: a fixture in
 `tests/conftest.py` makes any attempt to load a real model fail the test.
 
 ## Limitations
@@ -206,11 +218,6 @@ python -m pytest
 - **Dev server.** Flask's development server, on localhost by default.
 - **Hardware.** Tested only on Windows 11 with an RTX 2050 (4 GB).
 - **Timings.** Single runs.
-- **Web UI controls that do nothing.** The Visual Theme dropdown sends names
-  such as "Modern Cool" that match none of the recognised themes, so every
-  choice gets the default palette. The Server Settings field and its Save
-  button, Cancel, Download Video, Share, Create New and Try Again have no
-  handlers, and the four step icons under the progress bar never change.
 
 ## What changed in November 2026
 
@@ -233,6 +240,9 @@ See the commit history for details.
 - Pinned dependencies (`08ad0d5`).
 - Evidence: `docs/PROVENANCE.md`, plus the measurement excerpts and
   nvidia-smi samples in `docs/runs/` (`3660a22`).
+- Web UI: theme names map to recognised themes, Download Video, Create New
+  and Try Again work, and controls that couldn't work are removed (this
+  commit).
 - Tests: pytest setup with a guard against loading real models (`b7abe50`,
   `b96d608`), plus tests added in each `fix:` commit.
 
