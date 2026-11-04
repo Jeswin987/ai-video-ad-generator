@@ -5,6 +5,8 @@
 
 let currentJobId = null;
 let pollingInterval = null;
+// Replaced with the service name once a health check succeeds
+let connectedText = 'Connected to server';
 
 // DOM Elements
 const elements = {
@@ -41,24 +43,29 @@ async function checkHealth() {
     updateConnectionStatus('connecting', 'Connecting...');
 
     try {
-        const response = await fetch('/api/health');
-        if (!response.ok) throw new Error();
+        const response = await apiFetch('/api/health');
+        if (!response.ok) return;
 
         const data = await response.json();
-        updateConnectionStatus('connected', `Connected to ${data.service}`);
+        connectedText = `Connected to ${data.service}`;
+        updateConnectionStatus('connected', connectedText);
     } catch (error) {
-        updateConnectionStatus('disconnected', 'Server not reachable');
+        // apiFetch has already set the header
     }
 }
 
-// fetch() rejects only when the server can't be reached; HTTP errors still resolve
+// fetch() rejects only when the server can't be reached; any HTTP response,
+// including 404 and 500, means the server is up
 async function apiFetch(url, options) {
+    let response;
     try {
-        return await fetch(url, options);
+        response = await fetch(url, options);
     } catch (error) {
         updateConnectionStatus('disconnected', 'Server not reachable');
         throw error;
     }
+    updateConnectionStatus('connected', connectedText);
+    return response;
 }
 
 function updateConnectionStatus(status, text) {
@@ -113,6 +120,12 @@ function startPolling(jobId) {
     pollingInterval = setInterval(async () => {
         try {
             const response = await apiFetch(`/api/status/${jobId}`);
+            // Jobs live in server memory, so a restarted server no longer knows this one
+            if (response.status === 404) {
+                clearInterval(pollingInterval);
+                showError('Job not found. The server may have restarted.');
+                return;
+            }
             if (!response.ok) throw new Error();
 
             const status = await response.json();

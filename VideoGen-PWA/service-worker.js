@@ -1,5 +1,5 @@
 // Service Worker for offline capabilities
-const CACHE_NAME = 'video-generator-v3';
+const CACHE_NAME = 'video-generator-v4';
 const urlsToCache = [
     '/',
     '/index.html',

@@ -115,10 +115,12 @@ Cool first).
 shows the current stage and percentage, and plays the finished video in the
 page. **Download Video** downloads it from `/api/download/<job_id>`. **Create
 New** and, after a failure, **Try Again** return to the input form and keep the
-prompt text. The header's connection status comes from a health check at page
-load, repeated by Create New and Try Again, and changes to "Server not
-reachable" when an API call can't reach the server. There is no cancel: a job
-runs to the end once it has started.
+prompt text. The header shows "Server not reachable" when an API call gets no
+response, and switches back to connected on any response, including an
+error. Page load, Create New and Try Again also run a health check. Jobs are
+kept in server memory, so after a server restart the page stops polling and
+shows "Job not found. The server may have restarted." There is no cancel: a
+job runs to the end once it has started.
 
 ### API
 
