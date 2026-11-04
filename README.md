@@ -5,8 +5,9 @@ laptop GPU. Everything runs locally except the voiceover, which uses the online
 gTTS service. Gemma 2 2B IT, loaded in 4-bit, writes a storyline and turns
 it into scenes. SDXL-Turbo draws one 512x512 image per scene. gTTS reads each
 scene's voiceover. Each image becomes a Ken Burns
-(slow zoom and pan) scene video with a text overlay, and FFmpeg joins the
-scenes and the audio into one MP4. A Flask server runs the pipeline and serves
+(slow zoom and pan) scene video with a short on-screen headline caption (see
+[Limitations](#limitations)), and FFmpeg joins the scenes and the audio into
+one MP4. A Flask server runs the pipeline and serves
 a small web UI.
 
 All numbers below come from [docs/PROVENANCE.md](docs/PROVENANCE.md), which
@@ -50,12 +51,17 @@ Caveats, stated once here:
   [PROVENANCE.md section 4](docs/PROVENANCE.md#4-unload-evidence)).
 - Run A and Run B are nine commits apart, not only the unload fix, so not
   every difference between them comes from that fix.
-- Later commits change what Run B ran. `b8b2c48` and `4c72b51` change only how
-  overlay text is drawn and the text of a startup log message. The web UI fix
-  that came after them maps theme names to recognised themes, which changes
-  the palette in the image prompts but not the timing or memory path. Both
-  runs sent "Modern Cool", which at the time matched no theme and got the
-  default palette.
+- Later commits change what Run B ran:
+  - `b8b2c48` wraps and fits the caption text on every frame, which may add
+    time to scene rendering (see [Limitations](#limitations)).
+  - `4c72b51` changes only the text of a startup log message.
+  - `1ac2ef9` maps theme names to recognised themes, which changes the palette
+    in the image prompts but not the timing or memory path. Both runs sent
+    "Modern Cool", which at the time matched no theme and got the default
+    palette. It also changes the web UI.
+  - `778889d` changes only the web UI.
+  - `3660a22`, `4495e22` and the commit that adds Run C change only
+    documentation.
 
 ## How it fits in 4 GB
 
@@ -103,6 +109,37 @@ Install torch first, from the PyTorch index: the torch package on PyPI is
 CPU-only on Windows. In the `hf download` commands, use one `--include` per
 pattern: the hf CLI ignores extra patterns after a single flag. Models are
 loaded with `local_files_only=True`, so nothing is downloaded at run time.
+
+### Verified from a fresh clone
+
+On 2026-11-04 and 2026-11-05, a fresh clone of commit `1ac2ef9` was set up on
+Windows 11, Python 3.13.7, RTX 2050 by following the Quick start, with three
+deviations:
+
+1. It was cloned from the local branch before publishing.
+2. torch was installed from the same 2.11.0+cu128 wheel file, already
+   downloaded from that index, instead of downloading it again.
+3. `models/` was copied from an earlier download, then both `hf download`
+   commands were run as written. They re-hashed the copied weights against the
+   pinned revisions and downloaded only small config and tokenizer files,
+   including two unused 607-byte configs.
+
+Results: `requirements.txt` installed as written, with no retries, and 70
+tests passed in the clone. The full pipeline ran end to end through the web UI
+([docs/runs/runC-measurements.txt](docs/runs/runC-measurements.txt)) with the
+warm theme (runC.log:116, full log, not committed). Download Video and Create
+New were checked in the clone. Try Again was checked by hand on the working
+copy. The pipeline run used a different prompt and took 882.62 s; why it was
+slower is not logged, and its timings are not used elsewhere in this README.
+
+In the clone, restarting the server mid-job left the page polling a job that
+no longer existed. Commit `778889d` fixes that and was checked by hand in the
+browser by restarting the server mid-job.
+
+The deviations, the checks and the Python version (from the clone's pytest
+run, "platform win32 -- Python 3.13.7") were reported by the person who ran
+them. As with Runs A and B, the log does not record which commit was checked
+out.
 
 ## Using it
 
@@ -205,6 +242,14 @@ python -m pytest
 - **Voice.** gTTS needs internet access and sounds robotic. It has no speed
   control beyond a "slow" flag.
 - **Images.** SDXL-Turbo at 512x512 often gets faces and hands wrong.
+- **Character consistency.** Consistency across scenes is approximate: scenes
+  may show different-looking people.
+- **Captions are headlines, not subtitles.** Each scene shows an on-screen
+  headline of at most 8 words from its storyline beat: the hook, then the
+  problem, with the CTA on the last scene. It is not a transcript of the
+  narration.
+- **Caption rendering.** `b8b2c48` fits the caption text on every frame, which
+  may add time to scene rendering; this is not measured on its own.
 - **Steps.** 6 inference steps, above SDXL-Turbo's 1-4 step design range;
   kept from the original project.
 - **Negative prompt.** Guidance scale is 0, so the negative prompt has no
@@ -220,6 +265,9 @@ python -m pytest
 - **Dev server.** Flask's development server, on localhost by default.
 - **Hardware.** Tested only on Windows 11 with an RTX 2050 (4 GB).
 - **Timings.** Single runs.
+- **Web UI cache.** The service worker serves cached files first, so a UI
+  change reaches browsers only after the cache name in `service-worker.js`
+  changes.
 
 ## What changed in November 2026
 
@@ -233,7 +281,7 @@ See the commit history for details.
 - Prompt example and visual anchors: the scene prompt's example comes from the
   storyline, and its visual anchors reach image generation (`6aee9fb`,
   `b89a364`).
-- Per-scene overlays and text fitting: each scene gets its own overlay text,
+- Per-scene captions and text fitting: each scene gets its own caption,
   wrapped to fit the frame (`934bd7c`, `b8b2c48`).
 - Real progress: the API reports actual pipeline stages instead of simulated
   progress (`3ee6384`).
@@ -243,8 +291,9 @@ See the commit history for details.
 - Evidence: `docs/PROVENANCE.md`, plus the measurement excerpts and
   nvidia-smi samples in `docs/runs/` (`3660a22`).
 - Web UI: theme names map to recognised themes, Download Video, Create New
-  and Try Again work, and controls that couldn't work are removed (this
-  commit).
+  and Try Again work, and controls that couldn't work are removed (`1ac2ef9`).
+- Web UI after a server restart: the header recovers its connected status, and
+  a job the server no longer knows ends with a clear message (`778889d`).
 - Tests: pytest setup with a guard against loading real models (`b7abe50`,
   `b96d608`), plus tests added in each `fix:` commit.
 
@@ -293,6 +342,8 @@ git.
 - A job queue.
 - Tune step count and image quality.
 - Release PyTorch's cached memory after unloading.
+- Timed subtitles from the narration.
+- Compute the caption layout once per scene instead of on every frame.
 
 ## Credits
 

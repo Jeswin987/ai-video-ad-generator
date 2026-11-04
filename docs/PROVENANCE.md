@@ -10,6 +10,10 @@ number below is copied from one of these sources, and the source is named.
 | `runs/runA-measurements.txt`, `runs/runB-measurements.txt` | Every `[Job]`, `[Timing]` and `[VRAM]` line from each run's log, copied verbatim. Lines containing a local path would have been left out; none did. |
 | `runs/runA-nvsmi.csv`, `runs/runB-nvsmi.csv` | `nvidia-smi` memory samples from the same runs, copied unchanged. They contain only timestamps and MiB values. |
 
+`docs/runs/` also holds `runs/runC-measurements.txt`, copied the same way from
+Run C, a verification run with a different prompt whose numbers are not used
+in the README's results.
+
 Citations use `file:line`, e.g. `runs/runA-measurements.txt:22`.
 
 **Full logs.** The two full run logs, runA.log and runB.log, contain local

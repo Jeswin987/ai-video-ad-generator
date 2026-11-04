@@ -1,0 +1,23 @@
+2026-11-04 23:29:01,743 - src.core.measurement - INFO - [Job] 09da5c72-4e9c-47eb-a5dd-03412d8df6dd
+2026-11-04 23:29:01,776 - src.core.measurement - INFO - [Job] GPU: NVIDIA GeForce RTX 2050, total VRAM 4.00 GB
+2026-11-04 23:29:01,779 - src.core.measurement - INFO - [Job] torch 2.11.0+cu128, CUDA build 12.8
+2026-11-04 23:29:01,782 - src.core.measurement - INFO - [Job] Config: scenes=3, image=512x512, steps=6, video=512x512 @ 24fps
+2026-11-04 23:29:43,959 - src.core.measurement - INFO - [Timing] Gemma Loading: 42.14 seconds
+2026-11-04 23:29:43,960 - src.core.measurement - INFO - [VRAM] Gemma Loading: peak allocated 2.11 GB, peak reserved 2.12 GB
+2026-11-04 23:34:05,672 - src.core.measurement - INFO - [Timing] LLM + Scene Structuring: 261.28 seconds
+2026-11-04 23:34:05,673 - src.core.measurement - INFO - [VRAM] LLM + Scene Structuring: peak allocated 2.24 GB, peak reserved 2.33 GB
+2026-11-04 23:34:14,927 - src.core.measurement - INFO - [Timing] SDXL Loading: 8.06 seconds
+2026-11-04 23:34:14,928 - src.core.measurement - INFO - [VRAM] SDXL Loading: peak allocated 0.01 GB, peak reserved 2.04 GB
+2026-11-04 23:42:39,859 - src.core.measurement - INFO - [Timing] Image Generation: 514.18 seconds
+2026-11-04 23:42:39,860 - src.core.measurement - INFO - [VRAM] Image Generation: peak allocated 2.08 GB, peak reserved 2.33 GB
+2026-11-04 23:42:46,171 - src.core.measurement - INFO - [Timing] Voiceover Generation: 6.31 seconds
+2026-11-04 23:42:46,172 - src.core.measurement - INFO - [VRAM] Voiceover Generation: peak allocated 0.01 GB, peak reserved 2.04 GB
+2026-11-04 23:42:46,454 - src.core.measurement - INFO - [Timing] Audio Merge: 0.28 seconds
+2026-11-04 23:42:46,455 - src.core.measurement - INFO - [VRAM] Audio Merge: peak allocated 0.01 GB, peak reserved 2.04 GB
+2026-11-04 23:43:42,648 - src.core.measurement - INFO - [Timing] Scene Video Generation: 56.19 seconds
+2026-11-04 23:43:42,649 - src.core.measurement - INFO - [VRAM] Scene Video Generation: peak allocated 0.01 GB, peak reserved 2.04 GB
+2026-11-04 23:43:44,346 - src.core.measurement - INFO - [Timing] Final Assembly: 1.70 seconds
+2026-11-04 23:43:44,347 - src.core.measurement - INFO - [VRAM] Final Assembly: peak allocated 0.01 GB, peak reserved 2.04 GB
+2026-11-04 23:43:44,354 - src.core.video_generation_pipeline - INFO - [Timing] TOTAL PIPELINE TIME: 14.00 minutes
+2026-11-04 23:43:44,361 - src.core.measurement - INFO - [Timing] JOB TOTAL (incl. Gemma loading): 882.62 seconds
+2026-11-04 23:43:44,362 - src.core.measurement - INFO - [VRAM] JOB PEAK (max over stages): allocated 2.24 GB, reserved 2.33 GB
