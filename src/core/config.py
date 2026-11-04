@@ -279,13 +279,20 @@ class Config:
             logger.info(f"Ken Burns Zoom: {cls.KEN_BURNS_ZOOM_FACTOR}x")
             logger.info(f"Audio-Aware Motion: {'Yes' if cls.KEN_BURNS_AUDIO_AWARE else 'No'}")
         logger.info(f"Scenes: {cls.NUM_SCENES} (optimized for 4GB)")
-        logger.info(f"Duration: {cls.VIDEO_DURATION_MIN}-{cls.VIDEO_DURATION_MAX}s")
+        # Length follows the voiceover; VIDEO_DURATION_MIN/MAX are not enforced
+        logger.info(
+            f"Video length: follows the voiceover ({cls.MIN_SCENE_DURATION}s-{cls.MAX_SCENE_DURATION}s per scene); "
+            "two measured runs gave 21.77s and 16.49s"
+        )
         logger.info("-" * 70)
         logger.info(f"Audio Crossfade: {cls.AUDIO_CROSSFADE_MS}ms")
         logger.info(f"Duration Sync: {'Enabled' if cls.DURATION_SYNC_ENABLED else 'Disabled'}")
         logger.info(f"Scene Duration Range: {cls.MIN_SCENE_DURATION}s - {cls.MAX_SCENE_DURATION}s")
         logger.info("=" * 70)
-        logger.info("💡 Estimated generation time: 3-5 minutes per video")
+        logger.info(
+            "💡 Generation time: about 10 minutes per video on an RTX 2050 (4 GB) "
+            "in two measured runs (594.16s and 599.53s), including model loading"
+        )
         logger.info("=" * 70)
 
     @classmethod

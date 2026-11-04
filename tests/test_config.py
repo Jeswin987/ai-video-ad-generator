@@ -1,6 +1,7 @@
 """Smoke test: src/core/config.py imports and has the expected defaults."""
 
 import importlib
+import logging
 
 import src.core.config as config_module
 
@@ -28,3 +29,14 @@ def test_config_defaults(monkeypatch):
     assert Config.IMAGE_INFERENCE_STEPS == 6
     assert (Config.VIDEO_WIDTH, Config.VIDEO_HEIGHT) == (512, 512)
     assert Config.VIDEO_FPS == 24
+
+
+def test_summary_uses_measured_values(caplog):
+    with caplog.at_level(logging.INFO, logger=config_module.logger.name):
+        config_module.Config._log_config_summary()
+    summary = caplog.text
+
+    assert "3-5 minutes" not in summary
+    assert "about 10 minutes per video on an RTX 2050 (4 GB)" in summary
+    # VIDEO_DURATION_MIN/MAX are not enforced; a measured run gave 21.77 s
+    assert "Duration: 15-20s" not in summary
