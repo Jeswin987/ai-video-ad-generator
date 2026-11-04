@@ -1,341 +1,291 @@
-# AI Video Marketing Ad Generator
+# AI Video Ad Generator
 
-> A fully local, resource-aware AI pipeline that transforms a single text prompt into a complete marketing video — including script, visuals, voiceover, motion effects, and final rendering.
+A pipeline that turns a text prompt into a short marketing video on a 4 GB
+laptop GPU. Everything runs locally except the voiceover, which uses the online
+gTTS service. Gemma 2 2B IT, loaded in 4-bit, writes a storyline and turns
+it into scenes. SDXL-Turbo draws one 512x512 image per scene. gTTS reads each
+scene's voiceover. Each image becomes a Ken Burns
+(slow zoom and pan) scene video with a text overlay, and FFmpeg joins the
+scenes and the audio into one MP4. A Flask server runs the pipeline and serves
+a small web UI.
 
-Specifically engineered to run on **low-VRAM hardware (4GB GPU)** using quantization and staged model loading.
+All numbers below come from [docs/PROVENANCE.md](docs/PROVENANCE.md), which
+cites the log line or code line behind each one.
 
----
+## Results at a glance
 
-## What This Project Demonstrates
+One run (Run B) on an NVIDIA GeForce RTX 2050 (4 GB), 3 scenes, 512x512
+images, 6 steps, 512x512 video at 24 fps:
 
-This is a **memory-constrained AI systems engineering project** focused on:
+| Stage | Time (s) |
+|---|---|
+| Gemma Loading | 20.05 |
+| LLM + Scene Structuring | 201.40 |
+| Image Generation (includes SDXL Loading, 6.95 s) | 353.21 |
+| Voiceover Generation | 3.67 |
+| Audio Merge | 0.29 |
+| Scene Video Generation | 19.55 |
+| Final Assembly | 1.06 |
+| **Job total, including model loading** | **599.53** |
 
-- Running multiple generative models on a 4GB GPU
-- 4-bit LLM quantization with FP16 compute
-- Sequential model unloading to manage VRAM
-- CPU offloading for diffusion inference
-- Stage-level runtime instrumentation and logging
-- End-to-end automation from prompt → final MP4
+- **Job peak VRAM:** 2.21 GiB allocated, 2.33 GiB reserved, set during
+  LLM + Scene Structuring. These are PyTorch's allocator counters: they leave
+  out the CUDA context and anything allocated outside PyTorch.
+- **Video length:** 16.49 s.
 
----
+**Before and after the unload fix.** Before `7fe73be`, Gemma was never
+actually unloaded, so it stayed on the GPU while SDXL-Turbo ran. Run A was
+taken before the fix, Run B after it:
 
-## System Architecture (Runtime Flow)
+| | Run A | Run B |
+|---|---|---|
+| Job peak allocated | 3.03 GiB | 2.21 GiB |
+| Allocated in every stage after image generation | 2.08 GiB | 0.01 GiB |
 
-```
-User Prompt
-  → Flask REST API
-  → VideoGenerationPipeline (Core Orchestrator)
-  → Storyline & Scene Structuring (Gemma 2 2B IT – 4-bit quantized)
-  → Scene Normalization
-  → Text Model Unload (VRAM release)
-  → Image Generation per Scene (SDXL Turbo 512x512)
-  → Diffusion Model Unload
-  → Voiceover Generation + Duration Sync
-  → Scene Video Composition (Ken Burns motion)
-  → Media Stitching (FFmpeg)
-  → Final Rendered Video (MP4)
-```
+Caveats, stated once here:
 
----
+- Each number is from a single run, so there is no measure of run-to-run
+  variation.
+- SDXL-Turbo's own peak is not measured separately (see
+  [PROVENANCE.md section 4](docs/PROVENANCE.md#4-unload-evidence)).
+- Run A and Run B are nine commits apart, not only the unload fix, so not
+  every difference between them comes from that fix.
+- Two commits after Run B, `b8b2c48` and `4c72b51`, change only how overlay
+  text is drawn and the text of a startup log message.
 
-## Default Runtime Configuration (4GB Optimized Mode)
+## How it fits in 4 GB
 
-| Component        | Value    |
-|------------------|----------|
-| Scenes           | 3        |
-| Resolution       | 512x512  |
-| Diffusion Steps  | 6        |
-| Upscaling        | Disabled |
-| Video FPS        | 24       |
+- **4-bit Gemma.** `src/core/model_manager.py` loads Gemma with
+  `BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16,
+  bnb_4bit_use_double_quant=True, bnb_4bit_quant_type="nf4")` and
+  `device_map="cuda"`. The weights are 16-bit (bf16) on disk, quantized to
+  4-bit NF4 at load time.
+- **Sequential CPU offload for SDXL-Turbo.** `src/media/image_generator.py`
+  loads the fp16 variant and calls `enable_sequential_cpu_offload()`, so
+  layers move to the GPU only while they run. It also enables attention
+  slicing, VAE slicing and VAE tiling.
+- **One model at a time.** The pipeline unloads Gemma before it loads
+  SDXL-Turbo, and unloads SDXL-Turbo before the voiceover stage. Each job
+  loads Gemma again.
 
-> The conceptual architecture supports a **5-scene marketing structure**, but runtime uses **3 scenes** to ensure VRAM stability on 4GB GPUs.
+## Quick start
 
----
+Tested on Windows 11 with Git Bash, Python 3.13 and an NVIDIA GPU.
 
-## Models Used
+Prerequisites:
 
-### Text Model — Gemma 2 2B IT
-
-- Fully local loading
-- `load_in_4bit=True` using BitsAndBytes
-- FP16 compute dtype
-- Full-precision weights stored on disk
-- Quantized dynamically at load time
-
-### Image Model — SDXL Turbo
-
-- 512x512 inference
-- Sequential CPU offload
-- Attention slicing enabled
-- VAE optimizations enabled
-
----
-
-## Model Storage
-
-Models are downloaded once from Hugging Face and stored locally:
-
-```
-models/
-├── gemma-2-2b-it/
-└── sdxl-turbo/
-```
-
-Runtime loading uses `local_files_only=True`, which guarantees:
-
-- No runtime downloads
-- Fully offline operation
-- Faster startup
-
----
-
-## Hardware Compatibility
-
-Tested on:
-
-| Component | Spec          |
-|-----------|---------------|
-| GPU       | NVIDIA RTX 2050 |
-| VRAM      | 4GB           |
-| RAM       | 8GB           |
-
-**Peak VRAM usage:** `~2.0–2.2GB` active allocation — stable under the 4GB limit.
-
----
-
-## Performance Benchmarks (RTX 2050)
-
-Example run (3 scenes, ~23s video):
-
-| Stage                    | Time          |
-|--------------------------|---------------|
-| LLM + Scene Structuring  | ~98 seconds   |
-| Image Generation         | ~308 seconds  |
-| Voiceover + Audio Merge  | ~5 seconds    |
-| Scene Video Rendering    | ~29 seconds   |
-| Final Assembly           | ~1.4 seconds  |
-| **Total Pipeline Time**  | **~7 minutes** |
-
-> Performance scales approximately linearly with scene count.
-
----
-
-## Output
-
-Each generation produces:
-
-- AI-generated scene images
-- Voiceover audio files
-- Per-scene video clips
-- Final MP4 with audio
-- Scene metadata JSON
-- Runtime logs
-
-```
-output/
-├── images/
-│   ├── scene_1_image.png
-│   ├── scene_2_image.png
-│   └── scene_3_image.png
-├── audio/
-│   ├── audio_scene_1.mp3
-│   ├── audio_scene_2.mp3
-│   └── audio_scene_3.mp3
-└── final_video_with_audio.mp4
-```
-
----
-
-## Installation
-
-**1. Clone the repository**
+- FFmpeg and ffprobe on `PATH`
+- A Hugging Face account that has accepted the Gemma licence
+- Disk space, measured with `du -sh` on the test machine: about 11.4 GiB for
+  the models (`gemma-2-2b-it` 4.9 GiB + `sdxl-turbo` 6.5 GiB), plus 5.0 GiB
+  for the venv
+- Internet access while generating, for gTTS
 
 ```bash
 git clone https://github.com/Jeswin987/ai-video-ad-generator.git
 cd ai-video-ad-generator
-```
-
-**2. Create a virtual environment**
-
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-**3. Install dependencies**
-
-```bash
+py -3.13 -m venv venv
+source venv/Scripts/activate
+python -m pip install --upgrade pip
+pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu128
 pip install -r requirements.txt
-```
-
----
-
-## 📥 Model Setup
-
-Download models from Hugging Face and place them into the `models/` directory:
-
-```
-models/
-├── gemma-2-2b-it/
-│   └── config.json
-└── sdxl-turbo/
-    └── model_index.json
-```
-
-The system loads models strictly from local storage using `local_files_only=True`, ensuring:
-
-- No runtime downloads
-- Offline operation
-- Deterministic execution
-
----
-
-## Running the Server
-
-```bash
+hf auth login
+hf download google/gemma-2-2b-it --revision 299a8560bedf22ed1c72a8a11e7dce4a7f9f51f8 --local-dir models/gemma-2-2b-it --include "*.json" --include "*.safetensors" --include "tokenizer.model"
+hf download stabilityai/sdxl-turbo --revision 71153311d3dbb46851df1931d3ca6e939de83304 --local-dir models/sdxl-turbo --include "*.json" --include "*.txt" --include "*.fp16.safetensors"
 python app.py
 ```
 
-Server runs at: `http://localhost:5000`
+Install torch first, from the PyTorch index: the torch package on PyPI is
+CPU-only on Windows. In the `hf download` commands, use one `--include` per
+pattern: the hf CLI ignores extra patterns after a single flag. Models are
+loaded with `local_files_only=True`, so nothing is downloaded at run time.
 
-Expected startup logs:
+## Using it
 
-```
-AI VIDEO GENERATION API SERVER
-Device: cuda
-Image Generation: Enabled
-Pipeline ready
-```
+### Web UI
 
----
+Open http://127.0.0.1:5000. The page checks the server's health, then takes a
+product description and a visual theme. **Generate Video** starts a job; the
+page polls its status every 2 seconds, shows the current stage and percentage,
+and plays the finished video in the page. The other controls do nothing (see
+[Limitations](#limitations)).
 
-## Web Interface
+### API
 
-Open `http://localhost:5000` in your browser.
+```bash
+# Start a job. Returns 202 with a job_id.
+curl -X POST http://127.0.0.1:5000/api/generate-video \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Create a marketing video for an AI-powered productivity app designed for students.", "theme": "cool"}'
 
-Features:
-- Prompt input
-- Video generation trigger
-- Progress monitoring
-- Video download
+# Status: status, progress, stage/message, video_ready, video_url, error
+curl http://127.0.0.1:5000/api/status/<job_id>
 
----
-
-## Example Prompt
-
-```
-Create a marketing video for an AI-powered productivity app designed for students.
-Highlight distraction problems and show how the AI assistant improves focus.
+# Download the finished MP4
+curl -o video.mp4 http://127.0.0.1:5000/api/download/<job_id>
 ```
 
-Typical output:
-- 3 scenes
-- 20–30 seconds video
-- AI-generated visuals
-- Voiceover narration
-- Ken Burns animated motion
-- Final MP4 render
+`theme` is optional. The image prompt recognises `professional blue`,
+`green`, `purple`, `warm` and `cool`; anything else gets the default blue
+palette. `GET /api/health` and `GET /api/jobs` also exist.
 
----
+### Progress stages
 
-## Project Structure
+`progress` marks which stage has started, not time remaining:
+
+| progress | message |
+|---|---|
+| 0 | Initializing... (Gemma loads here) |
+| 12 | Stage 1/7: Generating storyline |
+| 25 | Stage 2/7: Generating scene descriptions |
+| 37 | Stage 3/7: Generating images |
+| 50 | Stage 4/7: Generating voiceovers |
+| 62 | Stage 5/7: Merging audio |
+| 75 | Stage 6/7: Creating scene videos |
+| 87 | Stage 7/7: Assembling final video |
+| 100 | completed, or failed with an error message |
+
+Most of the time goes to stages 1-3 (see the table above).
+
+### LAN access
+
+The server listens on 127.0.0.1 only. To reach it from other devices, opt in
+with `APP_HOST=0.0.0.0 python app.py`; the server logs a warning when it is
+reachable from the network. `scripts/setup_firewall.bat` (run as
+Administrator) adds a Windows Firewall rule for port 5000. There is no
+authentication.
+
+### Output
+
+Each job writes into its own folder:
+
+```
+output/<job_id>/
+├── images/
+│   ├── scene_N_image.png
+│   └── scene_N_prompt.json      # prompts and settings used for the image
+├── audio/
+│   └── audio_scene_N.mp3
+├── videos/
+│   └── scene_N_video.mp4
+├── merged_audio.mp3
+├── concatenated_video.mp4
+└── final_video_with_audio.mp4   # the file /api/download serves
+```
+
+Each server run also writes a log to `logs/run_<YYYYmmdd_HHMMSS>.log`, with
+`[Timing]` and `[VRAM]` lines for every stage.
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+52 tests. They need no GPU, model weights or network: a fixture in
+`tests/conftest.py` makes any attempt to load a real model fail the test.
+
+## Limitations
+
+- **Voice.** gTTS needs internet access and sounds robotic. It has no speed
+  control beyond a "slow" flag.
+- **Images.** SDXL-Turbo at 512x512 often gets faces and hands wrong.
+- **Steps.** 6 inference steps, above SDXL-Turbo's 1-4 step design range;
+  kept from the original project.
+- **Negative prompt.** Guidance scale is 0, so the negative prompt has no
+  effect.
+- **No seeds.** Every run gives different text, images and video.
+- **Scene count.** The storyline prompt asks for 5 scenes, but only 3
+  (`NUM_SCENES`) are rendered.
+- **Scene length.** Each scene follows its voiceover, clamped to 2-12 s.
+- **One job at a time.** There is no queue: each request starts its own
+  thread, and nothing stops a second job from starting while one runs.
+- **Memory after unloading.** PyTorch keeps 2.04 GiB reserved after the models
+  are unloaded, even though `empty_cache()` is called.
+- **Dev server.** Flask's development server, on localhost by default.
+- **Hardware.** Tested only on Windows 11 with an RTX 2050 (4 GB).
+- **Timings.** Single runs.
+- **Web UI controls that do nothing.** The Visual Theme dropdown sends names
+  such as "Modern Cool" that match none of the recognised themes, so every
+  choice gets the default palette. The Server Settings field and its Save
+  button, Cancel, Download Video, Share, Create New and Try Again have no
+  handlers, and the four step icons under the progress bar never change.
+
+## What changed in November 2026
+
+See the commit history for details.
+
+- Measurement: per-stage time and peak VRAM, written to a per-run log
+  (`382d9f3`).
+- Unload fix: Gemma is actually unloaded before image generation (`7fe73be`).
+- Per-job outputs: each job writes into its own folder (`f2a15f5`).
+- Dev-server security: debugger off, localhost by default (`cfb5ca9`).
+- Prompt example and visual anchors: the scene prompt's example comes from the
+  storyline, and its visual anchors reach image generation (`6aee9fb`,
+  `b89a364`).
+- Per-scene overlays and text fitting: each scene gets its own overlay text,
+  wrapped to fit the frame (`934bd7c`, `b8b2c48`).
+- Real progress: the API reports actual pipeline stages instead of simulated
+  progress (`3ee6384`).
+- Log messages: 4 GB cards are no longer flagged as below 4 GB (`d6fe8ee`),
+  and the startup time estimate uses measured values (`4c72b51`).
+- Pinned dependencies (`08ad0d5`).
+- Evidence: `docs/PROVENANCE.md`, plus the measurement excerpts and
+  nvidia-smi samples in `docs/runs/` (`3660a22`).
+- Tests: pytest setup with a guard against loading real models (`b7abe50`,
+  `b96d608`), plus tests added in each `fix:` commit.
+
+## Project structure
 
 ```
 ai-video-ad-generator/
-├── app.py
+├── app.py                        # Flask server, API, job threads
 ├── requirements.txt
+├── requirements-dev.txt
+├── pytest.ini
 ├── src/
 │   ├── core/
 │   │   ├── config.py
-│   │   ├── model_manager.py
+│   │   ├── measurement.py        # [Timing] / [VRAM] logging
+│   │   ├── model_manager.py      # Gemma loading and unloading
 │   │   └── video_generation_pipeline.py
 │   ├── generation/
 │   │   ├── storyline_generator.py
 │   │   ├── scene_descriptor.py
 │   │   └── scene_normalizer.py
 │   └── media/
-│       ├── image_generator.py
+│       ├── image_generator.py    # SDXL-Turbo
+│       ├── image_upscaler.py     # disabled by default
 │       ├── voiceover_generator.py
 │       ├── audio_merger.py
 │       ├── video_generator_with_images.py
+│       ├── easing_functions.py
 │       └── media_merger.py
-├── models/
-├── output/
-├── logs/
-└── temp/
+├── VideoGen-PWA/                 # web UI served by app.py
+├── tests/
+├── docs/
+│   ├── PROVENANCE.md
+│   └── runs/                     # measurement excerpts and nvidia-smi samples
+└── scripts/
+    └── setup_firewall.bat
 ```
 
----
+`models/`, `output/`, `logs/` and `temp/` are created locally and are not in
+git.
 
-## Logging and Instrumentation
+## Future improvements
 
-The pipeline includes detailed runtime instrumentation. Each run records:
+- Use Gemma's chat template for prompts.
+- Offline TTS.
+- A job queue.
+- Tune step count and image quality.
+- Release PyTorch's cached memory after unloading.
 
-- Scene generation time
-- Diffusion time
-- Audio generation time
-- Video rendering time
-- Final assembly time
-- Total runtime
+## Credits
 
-Example log output:
-
-```
-[Timing] LLM + Scene Structuring:  98 seconds
-[Timing] Image Generation:        308 seconds
-[Timing] Scene Video Generation:   28 seconds
-[Timing] Final Assembly:            1.4 seconds
-```
-
-Logs are stored in the `logs/` directory.
-
----
-
-## 🔧 Engineering Challenges Solved
-
-### VRAM Constraints
-
-**Problem:** Running LLM and diffusion models together exceeds 4GB VRAM.
-
-**Solution:**
-- 4-bit LLM quantization
-- Sequential model unloading
-- CPU offloading
-- FP16 compute
-
-### Memory Stability
-
-**Problem:** Diffusion models crash on low-VRAM GPUs.
-
-**Solution:**
-- CPU offload pipeline
-- Reduced resolution (512x512)
-- Reduced diffusion steps (6)
-- Controlled pipeline execution order
-
-### Runtime Optimization
-
-**Problem:** Full pipelines can take 20+ minutes.
-
-**Solution:**
-- SDXL Turbo for fast inference
-- Low-step diffusion
-- Optimized scene count
-- Efficient FFmpeg media assembly
-
----
-
-## Future Improvements
-
-- [ ] Higher resolution generation
-- [ ] 5-scene runtime mode
-- [ ] Better voice synthesis models
-- [ ] Faster diffusion schedulers
-- [ ] GPU batching support
-- [ ] Style templates
-
----
-
-## 📄 License
-
-For educational and research purposes.
+Built as a course mini-project at DUK (Sep–Dec 2025) by a three-person team:
+Jesvin Devasia, Biswa Das, and Sumaya. The code was published to this
+repository in February 2026, so the git history doesn't show who wrote which
+part. The November 2026 polish (measurement, bug fixes, tests; see the commit
+history) is by Jesvin Devasia.
